@@ -8,6 +8,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const {sequelize, connectDb} = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
+const letterRoutes = require('./routes/letterRoutes')
 
 const app = express();
 
@@ -22,6 +23,7 @@ app.get('/api', (req, res) => {
     res.json({message: 'Welcome to BAPENDA Surat API'});
 })
 
+app.use('/api/letter', letterRoutes)
 app.use(errorHandler);
 
 async function startServer() {
