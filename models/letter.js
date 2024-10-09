@@ -21,6 +21,9 @@ const Letter = sequelize.define('Letter', {
     to: {
         type: DataTypes.STRING,
     },
+    filename: {
+        type: DataTypes.STRING,
+    },
     file: {
         type: DataTypes.BLOB('medium'),
         allowNull: true,

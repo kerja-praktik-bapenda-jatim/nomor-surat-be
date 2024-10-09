@@ -2,17 +2,19 @@ const Letter = require('../models/letter');
 const {Op} = require("sequelize");
 
 exports.createLetter = async (req, res, next) => {
-    const {spareCounts, date, subject, to, file} = req.body;
+    const {spareCounts, date, subject, to} = req.body;
+    const file = req.file;
     console.log(req.body)
 
     try {
+        
         if (spareCounts) {
             // Buat array dengan panjang sebanyak spareCounts
             const letters = Array.from({ length: spareCounts }, () => ({
                 date: date,
-                subject: subject,
-                to: to,
-                file: file
+                // subject: subject,
+                // to: to,
+                // file: file
             }));
 
             // Bulk create letters
@@ -23,11 +25,17 @@ exports.createLetter = async (req, res, next) => {
         }
         else{
             console.log("creating")
+
+            if (!file) {
+                return res.status(400).json({ message: 'No file uploaded' });
+            }
+
             const letter = await Letter.create({
                 date: date, 
                 subject: subject, 
                 to: to, 
-                file: file,
+                filename: file.originalname,
+                file: file.buffer,
             })
             return res.status(201).json(letter)
         }
@@ -69,6 +77,7 @@ exports.getAllLetter = async (req, res, next) => {
 
     try {
         const {count, rows} = await Letter.findAndCountAll({
+            attributes: {exclude: ['file']},
             where: filterConditions
         })
         if (count === 0) {
@@ -83,7 +92,9 @@ exports.getAllLetter = async (req, res, next) => {
 exports.getLetterById = async (req, res, next) => {
     const id = req.params.id
     try {
-        const letter = await Letter.findByPk(id)
+        const letter = await Letter.findByPk(id,{
+            attributes: {exclude: ['file']}
+        })
         if (!letter) {
             return res.status(404).json({message: 'Not found'})
         }
@@ -92,6 +103,37 @@ exports.getLetterById = async (req, res, next) => {
         next(error)
     }
 }
+
+// Controller untuk mengunduh file surat
+exports.downloadLetterFile = async (req, res, next) => {
+    const { id } = req.params;
+
+    try {
+        // Cari surat berdasarkan id
+        const letter = await Letter.findByPk(id);
+
+        if (!letter) {
+            return res.status(404).json({ message: 'Letter not found' });
+        }
+
+        // Cek apakah file ada
+        if (letter.file) {
+
+            const fileName = letter.filename
+            console.log(fileName)
+            // Set header untuk mendownload file
+            res.setHeader('Content-Type', 'application/pdf'); // Sesuaikan dengan tipe file
+            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+
+            // Kirim file sebagai buffer
+            return res.status(200).send(letter.file);
+        } else {
+            return res.status(404).json({ message: 'No file attached to this letter' });
+        }
+    } catch (error) {
+        next(error);
+    }
+};
 
 exports.updateLetterById = async (req, res, next) => {
     const id = req.params.id;
