@@ -10,6 +10,7 @@ const {sequelize, connectDb} = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
 const authMiddleware = require('./middlewares/authMiddleware');
 const letterRoutes = require('./routes/letterRoutes')
+const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes')
 
 const app = express();
@@ -27,6 +28,7 @@ app.get('/api', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/letter', authMiddleware, letterRoutes)
+app.use('/api/user', authMiddleware, userRoutes)
 app.use(errorHandler);
 
 async function startServer() {

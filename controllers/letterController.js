@@ -1,5 +1,6 @@
 const Letter = require('../models/letter');
-const {Op} = require("sequelize");
+const {Op, fn, col} = require("sequelize");
+const { stringToBoolean } = require('../utils/util');
 
 exports.createLetter = async (req, res, next) => {
     const {spareCounts, date, subject, to} = req.body;
@@ -39,24 +40,38 @@ exports.createLetter = async (req, res, next) => {
 
 exports.getAllLetter = async (req, res, next) => {
     console.log(req.query)
-    const {min, max, desc, recent} = req.query
+    const {start, end, subject, to, reserved, recent} = req.query
     const filterConditions = {}
 
-    if (min) {
-        filterConditions.amount = {
-            [Op.gte]: parseInt(min)
+    if (start) {
+        filterConditions.date = {
+            [Op.gte]: new Date(start),
         }
     }
-    if (max) {
-        filterConditions.amount = {
-            ...filterConditions.amount,
-            [Op.lte]: parseInt(max)
+    if (end) {
+        filterConditions.date = {
+            ...filterConditions.date,
+            [Op.lte]: new Date(end),
         }
     }
-    if (desc) {
-        filterConditions.description = {
-            [Op.iLike]: `%${desc}%`
-        }
+
+    if (subject) {
+        filterConditions.subject = {
+            [Op.and]: [
+                fn('LOWER', col('subject')), {
+                    [Op.like]: `%${subject.toLowerCase()}%`
+                }
+            ]
+        };
+    }
+    if (to) {
+        filterConditions.to = {
+            [Op.and]: [
+                fn('LOWER', col('to')), {
+                    [Op.like]: `%${to.toLowerCase()}%`
+                }
+            ]
+        };
     }
     if (recent) {
         const current = new Date();
@@ -65,6 +80,11 @@ exports.getAllLetter = async (req, res, next) => {
             [Op.lte]: current,
             [Op.gte]: new Date(current - recent * 24 * 60 * 60 * 1000),
         };
+    }
+    if (reserved) {
+        filterConditions.reserved = {
+            [Op.eq]: stringToBoolean(reserved),
+        }
     }
     console.log(filterConditions)
 
