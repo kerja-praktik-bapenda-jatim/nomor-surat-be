@@ -7,10 +7,10 @@ exports.createLetter = async (req, res, next) => {
     console.log(req.body)
 
     try {
-        
+
         if (spareCounts) {
             // Buat array dengan panjang sebanyak spareCounts
-            const letters = Array.from({ length: spareCounts }, () => ({
+            const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
                 // subject: subject,
                 // to: to,
@@ -21,21 +21,14 @@ exports.createLetter = async (req, res, next) => {
             const createdLetters = await Letter.bulkCreate(letters);
 
             // Return response dengan data yang dibuat
-            return res.status(201).json({ createdLetters });
-        }
-        else{
-            console.log("creating")
-
-            if (!file) {
-                return res.status(400).json({ message: 'No file uploaded' });
-            }
-
+            return res.status(201).json({createdLetters});
+        } else {
             const letter = await Letter.create({
-                date: date, 
-                subject: subject, 
-                to: to, 
-                filename: file.originalname,
-                file: file.buffer,
+                date: date,
+                subject: subject,
+                to: to,
+                filename: file ? file.originalname : null,
+                file: file ? file.buffer : null,
             })
             return res.status(201).json(letter)
         }
@@ -92,7 +85,7 @@ exports.getAllLetter = async (req, res, next) => {
 exports.getLetterById = async (req, res, next) => {
     const id = req.params.id
     try {
-        const letter = await Letter.findByPk(id,{
+        const letter = await Letter.findByPk(id, {
             attributes: {exclude: ['file']}
         })
         if (!letter) {
@@ -106,14 +99,14 @@ exports.getLetterById = async (req, res, next) => {
 
 // Controller untuk mengunduh file surat
 exports.downloadLetterFile = async (req, res, next) => {
-    const { id } = req.params;
+    const {id} = req.params;
 
     try {
         // Cari surat berdasarkan id
         const letter = await Letter.findByPk(id);
 
         if (!letter) {
-            return res.status(404).json({ message: 'Letter not found' });
+            return res.status(404).json({message: 'Letter not found'});
         }
 
         // Cek apakah file ada
@@ -128,7 +121,7 @@ exports.downloadLetterFile = async (req, res, next) => {
             // Kirim file sebagai buffer
             return res.status(200).send(letter.file);
         } else {
-            return res.status(404).json({ message: 'No file attached to this letter' });
+            return res.status(404).json({message: 'No file attached to this letter'});
         }
     } catch (error) {
         next(error);
@@ -173,13 +166,12 @@ exports.deleteAllLetter = async (req, res, next) => {
     const {truncate} = req.body;
 
     try {
-        if (truncate){
+        if (truncate) {
             const count = await Letter.destroy({
                 truncate: truncate,
             })
             return res.status(204).send();
-        }
-        else{
+        } else {
             return res.status(200).json({message: 'Do Nothing'})
         }
     } catch (error) {
