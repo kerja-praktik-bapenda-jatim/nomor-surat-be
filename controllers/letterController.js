@@ -3,6 +3,7 @@ const fs = require('fs');
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
 const {stringToBoolean} = require('../utils/util');
+const {StatusCodes} = require('http-status-codes');
 
 exports.createLetter = async (req, res, next) => {
     const {spareCounts, date, subject, to} = req.body;
@@ -11,6 +12,9 @@ exports.createLetter = async (req, res, next) => {
     try {
 
         if (spareCounts) {
+            if (!req.payload.isAdmin) {
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
+            }
             // Buat array dengan panjang sebanyak spareCounts
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
@@ -24,7 +28,7 @@ exports.createLetter = async (req, res, next) => {
             const createdLetters = await Letter.bulkCreate(letters);
 
             // Return response dengan data yang dibuat
-            return res.status(201).json({createdLetters});
+            return res.status(StatusCodes.CREATED).json({createdLetters});
         } else {
             const letter = await Letter.create({
                 date: date,
@@ -34,7 +38,7 @@ exports.createLetter = async (req, res, next) => {
                 filename: file ? file.originalname : null,
                 filePath: file ? path.join('uploads', file.filename) : null,
             })
-            return res.status(201).json(letter)
+            return res.status(StatusCodes.CREATED).json(letter)
         }
     } catch (error) {
         next(error)
@@ -97,10 +101,13 @@ exports.getAllLetter = async (req, res, next) => {
     try {
         const {count, rows} = await Letter.findAndCountAll({
             attributes: {exclude: ['filePath']},
-            where: filterConditions
+            where: filterConditions,
+            order: [
+                ['number', 'DESC'],
+            ]
         })
         if (count === 0) {
-            return res.status(404).json({message: 'Letter not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'})
         }
         return res.json(rows)
     } catch (error) {
@@ -115,9 +122,9 @@ exports.getLetterById = async (req, res, next) => {
             attributes: {exclude: ['filePath']}
         })
         if (!letter) {
-            return res.status(404).json({message: 'Not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Not found'})
         }
-        return res.status(200).json(letter)
+        return res.json(letter)
     } catch (error) {
         next(error)
     }
@@ -132,7 +139,7 @@ exports.downloadLetterFile = async (req, res, next) => {
         const letter = await Letter.findByPk(id);
 
         if (!letter) {
-            return res.status(404).json({message: 'Letter not found'});
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'});
         }
 
         // Cek apakah filePath ada
@@ -146,10 +153,10 @@ exports.downloadLetterFile = async (req, res, next) => {
 
                 return res.sendFile(filePath); // Menggunakan res.download untuk mengirim file
             } else {
-                return res.status(404).json({ message: 'File not found on server' });
+                return res.status(StatusCodes.NOT_FOUND).json({message: 'File not found on server'});
             }
         } else {
-            return res.status(404).json({ message: 'No file attached to this letter' });
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'No file attached to this letter'});
         }
     } catch (error) {
         next(error);
@@ -163,10 +170,10 @@ exports.updateLetterById = async (req, res, next) => {
     try {
         const letter = await Letter.findByPk(id);
         if (!letter) {
-            return res.status(404).json({message: 'Letter not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'})
         }
         await letter.update(updatedData)
-        return res.status(200).json(letter)
+        return res.json(letter)
     } catch (error) {
         next(error)
     }
@@ -181,10 +188,10 @@ exports.deleteLetterById = async (req, res, next) => {
         })
 
         if (count === 0) {
-            return res.status(404).json({message: 'Letter not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'})
         }
 
-        return res.status(204).send();
+        return res.status(StatusCodes.NO_CONTENT).send();
     } catch (error) {
         next(error)
     }
@@ -198,9 +205,9 @@ exports.deleteAllLetter = async (req, res, next) => {
             const count = await Letter.destroy({
                 truncate: truncate,
             })
-            return res.status(204).send();
+            return res.status(StatusCodes.NO_CONTENT).send();
         } else {
-            return res.status(200).json({message: 'Do Nothing'})
+            return res.json({message: 'Do Nothing'})
         }
     } catch (error) {
         next(error)
