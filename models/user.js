@@ -17,10 +17,6 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING,
         allowNull: false,
     },
-    isAdmin: {
-        type: DataTypes.BOOLEAN,
-        allowNull: false,
-    },
 }, {
     hooks: {
         async beforeCreate(record, options) {

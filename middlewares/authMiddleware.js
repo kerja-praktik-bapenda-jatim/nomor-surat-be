@@ -7,10 +7,9 @@ const authenticateToken = (req, res, next) => {
 
     if (!token) return res.status(401).json({message: 'Access token required'});
 
-    jwt.verify(token, process.env.JWT_SECRET, {algorithms: ["HS384"]}, (err, user) => {
+    jwt.verify(token, process.env.JWT_SECRET, {algorithms: ["HS384"]}, (err, payload) => {
         if (err) return res.status(403).json({message: 'Invalid or expired token', error: err});
-        console.log(user)
-        req.user = user;
+        req.payload = payload;
         next();
     });
 };

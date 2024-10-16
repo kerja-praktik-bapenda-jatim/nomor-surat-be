@@ -12,6 +12,7 @@ const authMiddleware = require('./middlewares/authMiddleware');
 const letterRoutes = require('./routes/letterRoutes')
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes')
+const defineAssociations = require('./models/associations')
 
 const app = express();
 
@@ -35,6 +36,7 @@ async function startServer() {
     console.log(`server.js Current env: ${env}`);
     try {
         await connectDb();
+        defineAssociations()
 
         await sequelize.sync({alter: true});
         console.log('Database synced successfully!');

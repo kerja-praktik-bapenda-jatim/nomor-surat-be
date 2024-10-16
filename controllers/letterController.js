@@ -1,6 +1,6 @@
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
-const { stringToBoolean } = require('../utils/util');
+const {stringToBoolean} = require('../utils/util');
 
 exports.createLetter = async (req, res, next) => {
     const {spareCounts, date, subject, to} = req.body;
@@ -13,6 +13,7 @@ exports.createLetter = async (req, res, next) => {
             // Buat array dengan panjang sebanyak spareCounts
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
+                userId: req.payload.userId,
                 // subject: subject,
                 // to: to,
                 // file: file
@@ -26,6 +27,7 @@ exports.createLetter = async (req, res, next) => {
         } else {
             const letter = await Letter.create({
                 date: date,
+                userId: req.payload.userId,
                 subject: subject,
                 to: to,
                 filename: file ? file.originalname : null,
@@ -43,6 +45,9 @@ exports.getAllLetter = async (req, res, next) => {
     const {start, end, subject, to, reserved, recent} = req.query
     const filterConditions = {}
 
+    if (!req.payload.isAdmin) {
+        filterConditions.userId = req.payload.userId
+    }
     if (start) {
         filterConditions.date = {
             [Op.gte]: new Date(start),
