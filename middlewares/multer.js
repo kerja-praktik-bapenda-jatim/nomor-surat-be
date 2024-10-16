@@ -16,8 +16,7 @@ const storage = multer.diskStorage({
     },
     filename: function (req, file, cb) {
         // Simpan dengan nama asli file
-        const userId = req.payload.userId;
-        const uniqueName = `${userId}-${file.originalname}`;
+        const uniqueName = `${Date.now()}-${file.originalname}`;
         cb(null, uniqueName);
     }
 });
