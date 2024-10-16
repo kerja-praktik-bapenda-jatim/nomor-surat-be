@@ -1,3 +1,5 @@
+const path = require('path');
+const fs = require('fs');
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
 const {stringToBoolean} = require('../utils/util');
@@ -5,7 +7,6 @@ const {stringToBoolean} = require('../utils/util');
 exports.createLetter = async (req, res, next) => {
     const {spareCounts, date, subject, to} = req.body;
     const file = req.file;
-    console.log(req.body)
 
     try {
 
@@ -31,7 +32,7 @@ exports.createLetter = async (req, res, next) => {
                 subject: subject,
                 to: to,
                 filename: file ? file.originalname : null,
-                file: file ? file.buffer : null,
+                filePath: file ? path.join('uploads', file.filename) : null,
             })
             return res.status(201).json(letter)
         }
@@ -95,7 +96,7 @@ exports.getAllLetter = async (req, res, next) => {
 
     try {
         const {count, rows} = await Letter.findAndCountAll({
-            attributes: {exclude: ['file']},
+            attributes: {exclude: ['filePath']},
             where: filterConditions
         })
         if (count === 0) {
@@ -111,7 +112,7 @@ exports.getLetterById = async (req, res, next) => {
     const id = req.params.id
     try {
         const letter = await Letter.findByPk(id, {
-            attributes: {exclude: ['file']}
+            attributes: {exclude: ['filePath']}
         })
         if (!letter) {
             return res.status(404).json({message: 'Not found'})
@@ -134,19 +135,21 @@ exports.downloadLetterFile = async (req, res, next) => {
             return res.status(404).json({message: 'Letter not found'});
         }
 
-        // Cek apakah file ada
-        if (letter.file) {
+        // Cek apakah filePath ada
+        if (letter.filePath) {
+            const filePath = path.join(__dirname, '..', letter.filePath); // Mengambil path file dari database
 
-            const fileName = letter.filename
-            console.log(fileName)
-            // Set header untuk mendownload file
-            res.setHeader('Content-Type', 'application/pdf'); // Sesuaikan dengan tipe file
-            res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+            // Cek apakah file tersebut ada di filesystem
+            if (fs.existsSync(filePath)) {
+                // Set header untuk mendownload file dengan nama file dari database
+                res.setHeader('Content-Disposition', `attachment; filename="${letter.filename}"`);
 
-            // Kirim file sebagai buffer
-            return res.status(200).send(letter.file);
+                return res.sendFile(filePath); // Menggunakan res.download untuk mengirim file
+            } else {
+                return res.status(404).json({ message: 'File not found on server' });
+            }
         } else {
-            return res.status(404).json({message: 'No file attached to this letter'});
+            return res.status(404).json({ message: 'No file attached to this letter' });
         }
     } catch (error) {
         next(error);

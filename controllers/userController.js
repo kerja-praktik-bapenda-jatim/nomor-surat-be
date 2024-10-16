@@ -34,7 +34,7 @@ exports.getAllUser = async (req, res, next) => {
 
 exports.getMyProfile = async (req, res, next) => {
     try {
-        const user = await User.findByPk(req.user.userId, {
+        const user = await User.findByPk(req.payload.userId, {
             attributes: {exclude: ['password']}
         })
         if (!user) {

@@ -1,16 +1,31 @@
 const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
-// Set up storage for uploaded files (memory storage to handle buffer)
-const storage = multer.memoryStorage();
+// Tentukan storage di direktori uploads
+const storage = multer.diskStorage({
+    destination: function (req, file, cb) {
+        const uploadPath = path.join(__dirname, '..', 'uploads');
+        
+        // Cek apakah folder 'uploads' ada, jika tidak buat foldernya
+        if (!fs.existsSync(uploadPath)) {
+            fs.mkdirSync(uploadPath, { recursive: true });
+        }
 
-// Set up file filter and size limit
+        cb(null, uploadPath);  // Simpan file ke dalam folder 'uploads'
+    },
+    filename: function (req, file, cb) {
+        // Simpan dengan nama asli file
+        const userId = req.payload.userId;
+        const uniqueName = `${userId}-${file.originalname}`;
+        cb(null, uniqueName);
+    }
+});
+
+// Middleware untuk menangani file dengan batas ukuran 1MB
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1 * 1024 * 1024 },  // Set limit file size to 1MB
-    fileFilter: (req, file, cb) => {
-        // Allow all file types
-        cb(null, true);
-    }
+    limits: { fileSize: 1 * 1024 * 1024 },  // Batas file 1MB
 });
 
 module.exports = upload;
