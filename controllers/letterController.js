@@ -183,15 +183,44 @@ exports.deleteLetterById = async (req, res, next) => {
     const id = req.params.id;
 
     try {
-        const count = await Letter.destroy({
-            where: {id: id}
-        })
+        const letter = await Letter.findByPk(id);
 
-        if (count === 0) {
+        if (!letter) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'})
         }
 
-        return res.status(StatusCodes.NO_CONTENT).send();
+        // Cek apakah filePath ada
+        if (letter.filePath) {
+            const filePath = path.join(__dirname, '..', letter.filePath);
+
+
+            if (fs.existsSync(filePath)) {
+                fs.unlink(filePath, async (err) => {
+                    if (err) {
+                        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                            message: 'Failed to delete file',
+                            error: err
+                        });
+                    }
+                    await letter.update(
+                        {
+                            subject: null,
+                            to: null,
+                            filename: null,
+                            filePath: null,
+                            reserved: false,
+                            userId: null,
+                        },
+                    );
+
+                    return res.json({message: 'File and record deleted successfully'});
+                });
+            } else {
+                return res.status(StatusCodes.NOT_FOUND).json({message: 'File not found on server'});
+            }
+        } else {
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'No file attached to this letter'});
+        }
     } catch (error) {
         next(error)
     }
