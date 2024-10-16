@@ -1,14 +1,12 @@
 const express = require('express');
-const apiKeyMiddleware = require('../middlewares/apiKeyMiddleware');
 const authMiddleware = require('../middlewares/authMiddleware');
 const {register, login} = require('../controllers/authController');
 const router = express.Router();
 
-router.use(apiKeyMiddleware)
 router.post('/register', register)
 router.post('/login', login)
 router.post('/verify', authMiddleware, (req, res, next) => {
-    return res.json({message: 'Authentication success'});
+    return res.json({message: 'Verification success', payload: req.payload});
 })
 
 module.exports = router;
