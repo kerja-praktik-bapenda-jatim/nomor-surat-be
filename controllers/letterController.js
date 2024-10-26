@@ -165,19 +165,38 @@ exports.downloadLetterFile = async (req, res, next) => {
 
 exports.updateLetterById = async (req, res, next) => {
     const id = req.params.id;
-    const updatedData = req.body;
+    const { subject, to } = req.body;
+    const file = req.file;
 
+    const updatedData = {
+        subject: subject,
+        to: to,
+        filename: file ? file.originalname : null,
+        filePath: file ? path.join('uploads', file.filename) : null,
+        reserved: true,
+        userId: req.payload.userId,
+    };
+    
     try {
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
+        }
         const letter = await Letter.findByPk(id);
         if (!letter) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Letter not found' });
         }
-        await letter.update(updatedData)
-        return res.json(letter)
+
+        if (letter.reserved) {
+            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Cannot update a reserved letter' });
+        }
+
+        await letter.update(updatedData);
+        return res.json(letter);
     } catch (error) {
-        next(error)
+        next(error);
     }
-}
+};
+
 
 exports.deleteLetterById = async (req, res, next) => {
     const id = req.params.id;
