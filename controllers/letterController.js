@@ -92,6 +92,9 @@ exports.getAllLetter = async (req, res, next) => {
         };
     }
     if (reserved) {
+        if (!req.payload.isAdmin) {
+            delete filterConditions.userId
+        }
         filterConditions.reserved = {
             [Op.eq]: stringToBoolean(reserved),
         }
@@ -165,21 +168,19 @@ exports.downloadLetterFile = async (req, res, next) => {
 
 exports.updateLetterById = async (req, res, next) => {
     const id = req.params.id;
-    const { subject, to } = req.body;
+    const {subject, to} = req.body;
     const file = req.file;
 
     try {
         const letter = await Letter.findByPk(id);
         
         if (!letter) {
-            return res.status(StatusCodes.NOT_FOUND).json({ message: 'Letter not found' });
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'});
         }
 
         const updatedData = {
             subject: subject,
             to: to,
-            // filename: file ? file.originalname : null,
-            // filePath: file ? path.join('uploads', file.filename) : null,
             reserved: true,
             userId: req.payload.userId,
         };
