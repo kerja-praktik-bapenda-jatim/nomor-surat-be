@@ -168,26 +168,34 @@ exports.updateLetterById = async (req, res, next) => {
     const { subject, to } = req.body;
     const file = req.file;
 
-    const updatedData = {
-        subject: subject,
-        to: to,
-        filename: file ? file.originalname : null,
-        filePath: file ? path.join('uploads', file.filename) : null,
-        reserved: true,
-        userId: req.payload.userId,
-    };
-    
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
-        }
         const letter = await Letter.findByPk(id);
+        
         if (!letter) {
             return res.status(StatusCodes.NOT_FOUND).json({ message: 'Letter not found' });
         }
 
-        if (letter.reserved) {
-            return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Cannot update a reserved letter' });
+        const updatedData = {
+            subject: subject,
+            to: to,
+            // filename: file ? file.originalname : null,
+            // filePath: file ? path.join('uploads', file.filename) : null,
+            reserved: true,
+            userId: req.payload.userId,
+        };
+
+        if (file) {
+            if (letter.filePath) {
+                fs.unlink(path.join(__dirname, '..', letter.filePath), (err) => {
+                    if (err) {
+                        console.error("Gagal menghapus file lama:", err);
+                    }
+                });
+            }
+            
+            // Update dengan file baru
+            updatedData.filename = file.originalname;
+            updatedData.filePath = path.join('uploads', file.filename);
         }
 
         await letter.update(updatedData);
