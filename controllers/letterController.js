@@ -15,20 +15,50 @@ exports.createLetter = async (req, res, next) => {
             if (!req.payload.isAdmin) {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
             }
-            // Buat array dengan panjang sebanyak spareCounts
+            
+            // Konversi date dari request body menjadi objek Date
+            const date = new Date(req.body.date); // Pastikan ini adalah objek Date
+
+            // Buat tanggal hari ini dan kemarin
+            const startToday = new Date();
+            startToday.setHours(0, 0, 0, 0);  // Set awal hari ini ke 00:00:00
+
+            const endToday = new Date();
+            endToday.setHours(23, 59, 59, 999999); // Hari berikutnya untuk batas akhir hari ini
+
+            const yesterday = new Date(startToday);
+            yesterday.setDate(startToday.getDate() - 1);
+            // Jika `date` adalah kemarin, cek apakah ada surat yang dibuat hari ini
+            if (date.toDateString() === yesterday.toDateString()) {
+                const letterToday = await Letter.findOne({
+                    where: {
+                        date: {
+                            [Op.and]: {
+                                [Op.gte]: startToday,
+                                [Op.lte]: endToday,
+                            }
+                        }
+                    }
+                });
+
+                if (letterToday) {
+                    return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Surat untuk tanggal hari ini sudah ada. Tidak bisa menambah surat untuk tanggal kemarin.' });
+                }
+            }
+
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
-                // subject: subject,
-                // to: to,
-                // file: file
             }));
 
             // Bulk create letters
             const createdLetters = await Letter.bulkCreate(letters);
 
             // Return response dengan data yang dibuat
-            return res.status(StatusCodes.CREATED).json({createdLetters});
+            return res.status(StatusCodes.CREATED).json({
+                message: 'Spare Surat berhasil ditambahkan.',
+                createdLetters
+            });
         } else {
             const letter = await Letter.create({
                 date: date,
