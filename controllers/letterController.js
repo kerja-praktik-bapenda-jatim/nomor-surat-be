@@ -4,6 +4,7 @@ const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
 const {stringToBoolean} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
+const User = require('../models/user');
 
 exports.createLetter = async (req, res, next) => {
     const {spareCounts, date, subject, to} = req.body;
@@ -15,7 +16,7 @@ exports.createLetter = async (req, res, next) => {
             if (!req.payload.isAdmin) {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
             }
-            
+
             // Konversi date dari request body menjadi objek Date
             const date = new Date(req.body.date); // Pastikan ini adalah objek Date
 
@@ -42,13 +43,14 @@ exports.createLetter = async (req, res, next) => {
                 });
 
                 if (letterToday) {
-                    return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Surat untuk tanggal hari ini sudah ada. Tidak bisa menambah surat untuk tanggal kemarin.' });
+                    return res.status(StatusCodes.BAD_REQUEST).json({message: 'Surat untuk tanggal hari ini sudah ada. Tidak bisa menambah surat untuk tanggal kemarin.'});
                 }
             }
 
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
+                departmentId: null,
             }));
 
             // Bulk create letters
@@ -82,6 +84,15 @@ exports.getAllLetter = async (req, res, next) => {
 
     if (!req.payload.isAdmin) {
         filterConditions.userId = req.payload.userId
+    }
+    if (reserved) {
+        if (!req.payload.isAdmin) {
+            delete filterConditions.userId
+            filterConditions.departmentId = req.payload.departmentId
+        }
+        filterConditions.reserved = {
+            [Op.eq]: stringToBoolean(reserved),
+        }
     }
     if (start) {
         filterConditions.date = {
@@ -120,14 +131,6 @@ exports.getAllLetter = async (req, res, next) => {
             [Op.lte]: current,
             [Op.gte]: new Date(current - recent * 24 * 60 * 60 * 1000),
         };
-    }
-    if (reserved) {
-        if (!req.payload.isAdmin) {
-            delete filterConditions.userId
-        }
-        filterConditions.reserved = {
-            [Op.eq]: stringToBoolean(reserved),
-        }
     }
     console.log(filterConditions)
 
@@ -203,7 +206,7 @@ exports.updateLetterById = async (req, res, next) => {
 
     try {
         const letter = await Letter.findByPk(id);
-        
+
         if (!letter) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'});
         }
@@ -223,7 +226,7 @@ exports.updateLetterById = async (req, res, next) => {
                     }
                 });
             }
-            
+
             // Update dengan file baru
             updatedData.filename = file.originalname;
             updatedData.filePath = path.join('uploads', file.filename);
@@ -268,6 +271,7 @@ exports.deleteLetterById = async (req, res, next) => {
                             filePath: null,
                             reserved: false,
                             userId: null,
+                            departmentId: req.payload.departmentId
                         },
                     );
 

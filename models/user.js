@@ -1,6 +1,8 @@
 const {DataTypes} = require('sequelize');
 const {sequelize} = require('../config/db');
 const bcrypt = require('bcrypt');
+const Department = require("./department");
+const Letter = require("./letter");
 
 const User = sequelize.define('User', {
     id: {
@@ -28,5 +30,11 @@ const User = sequelize.define('User', {
         }
     }
 });
+
+Department.hasMany(User, {foreignKey: 'departmentId',});
+User.belongsTo(Department, {foreignKey: 'departmentId'});
+
+User.hasMany(Letter, {foreignKey: 'userId',});
+Letter.belongsTo(User, {foreignKey: 'userId'});
 
 module.exports = User;

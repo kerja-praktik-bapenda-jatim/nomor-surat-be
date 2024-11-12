@@ -32,6 +32,9 @@ const Letter = sequelize.define('Letter', {
         defaultValue: false,
         allowNull: false,
     },
+    departmentId: {
+        type: DataTypes.UUID,
+    }
 },
 {
     hooks:{
@@ -60,7 +63,7 @@ const Letter = sequelize.define('Letter', {
             record.forEach(letter => {
                 letter.number = newNumber++;
             });
-        }, 
+        },
     }
 },
 );
