@@ -21,10 +21,20 @@ const storage = multer.diskStorage({
     }
 });
 
-// Middleware untuk menangani file dengan batas ukuran 1MB
+// Filter file untuk memastikan hanya PDF yang diunggah
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype !== 'application/pdf') {
+        cb(new Error('Silahkan mengupload file dengan format PDF!'), false);
+    } else {
+        cb(null, true);
+    }
+};
+
+// Middleware untuk menangani file dengan batas ukuran 2MB
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 1 * 1024 * 1024 },  // Batas file 1MB
+    limits: { fileSize: 2 * 1024 * 1024 },  // Batas file 1MB
+    fileFilter: fileFilter  // Filter untuk tipe file PDF
 });
 
 module.exports = upload;
