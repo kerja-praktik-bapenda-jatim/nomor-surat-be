@@ -50,7 +50,6 @@ exports.createNota = async (req, res, next) => {
             const notas = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
-                departmentId: null,
             }));
 
             // Bulk create notas
@@ -88,7 +87,6 @@ exports.getAllNota = async (req, res, next) => {
     if (reserved) {
         if (!req.payload.isAdmin) {
             delete filterConditions.userId
-            filterConditions.departmentId = req.payload.departmentId
         }
         filterConditions.reserved = {
             [Op.eq]: stringToBoolean(reserved),
@@ -271,7 +269,6 @@ exports.deleteNotaById = async (req, res, next) => {
                             filePath: null,
                             reserved: false,
                             userId: null,
-                            departmentId: req.payload.departmentId
                         },
                     );
 

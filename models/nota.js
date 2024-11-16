@@ -32,9 +32,6 @@ const Nota = sequelize.define('Nota', {
         defaultValue: false,
         allowNull: false,
     },
-    departmentId: {
-        type: DataTypes.UUID,
-    }
 },
 {
     hooks:{
