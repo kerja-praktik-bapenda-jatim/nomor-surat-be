@@ -7,7 +7,7 @@ const {StatusCodes} = require('http-status-codes');
 const User = require('../models/user');
 
 exports.createLetter = async (req, res, next) => {
-    const {spareCounts, date, subject, to} = req.body;
+    const {spareCounts, date, subject, to, departmentId} = req.body;
     const file = req.file;
 
     try {
@@ -17,19 +17,18 @@ exports.createLetter = async (req, res, next) => {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
             }
 
-            // Konversi date dari request body menjadi objek Date
-            const date = new Date(req.body.date); // Pastikan ini adalah objek Date
+            const date = new Date(req.body.date);
 
-            // Buat tanggal hari ini dan kemarin
             const startToday = new Date();
-            startToday.setHours(0, 0, 0, 0);  // Set awal hari ini ke 00:00:00
+            startToday.setHours(0, 0, 0, 0);
 
             const endToday = new Date();
-            endToday.setHours(23, 59, 59, 999999); // Hari berikutnya untuk batas akhir hari ini
+            endToday.setHours(23, 59, 59, 999999);
 
             const yesterday = new Date(startToday);
             yesterday.setDate(startToday.getDate() - 1);
-            // Jika `date` adalah kemarin, cek apakah ada surat yang dibuat hari ini
+
+            date.setHours(23, 59, 59)
             if (date.toDateString() === yesterday.toDateString()) {
                 const letterToday = await Letter.findOne({
                     where: {
@@ -47,10 +46,14 @@ exports.createLetter = async (req, res, next) => {
                 }
             }
 
+            if (!departmentId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Bidang harus dipilih' });
+            }
+            
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
-                departmentId: null,
+                departmentId: departmentId,
             }));
 
             // Bulk create letters
@@ -65,6 +68,7 @@ exports.createLetter = async (req, res, next) => {
             const letter = await Letter.create({
                 date: date,
                 userId: req.payload.userId,
+                departmentId: req.payload.departmentId,
                 subject: subject,
                 to: to,
                 filename: file ? file.originalname : null,
@@ -271,7 +275,7 @@ exports.deleteLetterById = async (req, res, next) => {
                             filePath: null,
                             reserved: false,
                             userId: null,
-                            departmentId: req.payload.departmentId
+                            departmentId: req.payload.departmentId,
                         },
                     );
 
