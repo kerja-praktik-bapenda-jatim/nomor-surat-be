@@ -4,32 +4,28 @@ const Nota = require('../models/nota');
 const {Op, fn, col} = require("sequelize");
 const {stringToBoolean} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
-const User = require('../models/user');
 
 exports.createNota = async (req, res, next) => {
     const {spareCounts, date, subject, to} = req.body;
     const file = req.file;
 
     try {
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
+        }
 
         if (spareCounts) {
-            if (!req.payload.isAdmin) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
-            }
+            const date = new Date(req.body.date);
 
-            // Konversi date dari request body menjadi objek Date
-            const date = new Date(req.body.date); // Pastikan ini adalah objek Date
-
-            // Buat tanggal hari ini dan kemarin
             const startToday = new Date();
-            startToday.setHours(0, 0, 0, 0);  // Set awal hari ini ke 00:00:00
+            startToday.setHours(0, 0, 0, 0);
 
             const endToday = new Date();
-            endToday.setHours(23, 59, 59, 999999); // Hari berikutnya untuk batas akhir hari ini
+            endToday.setHours(23, 59, 59, 999999);
 
             const yesterday = new Date(startToday);
             yesterday.setDate(startToday.getDate() - 1);
-            // Jika `date` adalah kemarin, cek apakah ada surat yang dibuat hari ini
+
             if (date.toDateString() === yesterday.toDateString()) {
                 const notaToday = await Nota.findOne({
                     where: {
@@ -77,12 +73,11 @@ exports.createNota = async (req, res, next) => {
 }
 
 exports.getAllNota = async (req, res, next) => {
-    console.log(req.query)
     const {start, end, subject, to, reserved, recent} = req.query
     const filterConditions = {}
 
     if (!req.payload.isAdmin) {
-        filterConditions.userId = req.payload.userId
+        return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
     }
     if (reserved) {
         if (!req.payload.isAdmin) {
@@ -152,6 +147,9 @@ exports.getAllNota = async (req, res, next) => {
 exports.getNotaById = async (req, res, next) => {
     const id = req.params.id
     try {
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
+        }
         const nota = await Nota.findByPk(id, {
             attributes: {exclude: ['filePath']}
         })
@@ -169,7 +167,10 @@ exports.downloadNotaFile = async (req, res, next) => {
     const {id} = req.params;
 
     try {
-        // Cari surat berdasarkan id
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
+        }
+
         const nota = await Nota.findByPk(id);
 
         if (!nota) {
@@ -203,6 +204,9 @@ exports.updateNotaById = async (req, res, next) => {
     const file = req.file;
 
     try {
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
+        }
         const nota = await Nota.findByPk(id);
 
         if (!nota) {
@@ -242,6 +246,9 @@ exports.deleteNotaById = async (req, res, next) => {
     const id = req.params.id;
 
     try {
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
+        }
         const nota = await Nota.findByPk(id);
 
         if (!nota) {
@@ -289,6 +296,9 @@ exports.deleteAllNota = async (req, res, next) => {
     const {truncate} = req.body;
 
     try {
+        if (!req.payload.isAdmin) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
+        }
         if (truncate) {
             const count = await Nota.destroy({
                 truncate: truncate,
