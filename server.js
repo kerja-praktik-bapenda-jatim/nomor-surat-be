@@ -13,7 +13,8 @@ const letterRoutes = require('./routes/letterRoutes')
 const notaRoutes = require('./routes/notaRoutes')
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes')
-const departmentRoutes = require('./routes/departmentRoutes')
+const departmentRoutes = require('./routes/departmentRoutes');
+const exportRoutes = require('./routes/exportRoutes');
 
 const app = express();
 
@@ -33,6 +34,7 @@ app.use('/api/letter', authMiddleware, letterRoutes)
 app.use('/api/nota', authMiddleware, notaRoutes)
 app.use('/api/user', authMiddleware, userRoutes)
 app.use('/api/department', departmentRoutes)
+app.use('/api/export', exportRoutes)
 app.use(errorHandler);
 
 async function startServer() {
