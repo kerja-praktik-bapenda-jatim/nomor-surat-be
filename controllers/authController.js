@@ -1,6 +1,7 @@
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
+const Department = require('../models/department');
 const {StatusCodes} = require('http-status-codes');
 
 const JWT_SECRET = process.env.JWT_SECRET;
@@ -30,7 +31,13 @@ exports.login = async (req, res, next) => {
         if (!(username && password)) {
             return res.status(StatusCodes.BAD_REQUEST).json({message: 'Username and password is required'});
         }
-        const user = await User.findOne({where: {username}});
+        const user = await User.findOne({
+            where: {username},
+            include: {
+                model: Department,
+                attributes: ['name']
+            }
+        });
         if (!user) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'User not found'});
         }
@@ -40,7 +47,13 @@ exports.login = async (req, res, next) => {
             return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Invalid password'});
         }
 
-        const token = jwt.sign({userId: user.id, isAdmin: user.isAdmin, departmentId: user.departmentId}, JWT_SECRET, {
+        const token = jwt.sign({
+            userId: user.id,
+            userName: user.username,
+            isAdmin: user.isAdmin,
+            departmentId: user.departmentId,
+            departmentName: user.Department.name
+        }, JWT_SECRET, {
             expiresIn: '7d',
             algorithm: 'HS384'
         });
