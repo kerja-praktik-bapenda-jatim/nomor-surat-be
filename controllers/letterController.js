@@ -323,6 +323,11 @@ exports.deleteAllLetter = async (req, res, next) => {
 exports.exportLetter = async (req, res) => {
     try {
         const {startDate, endDate, departmentId} = req.query;
+        const isAdmin = req.payload.isAdmin
+
+        if (!isAdmin && departmentId !== req.payload.departmentId) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: 'User role can only export own department letter'})
+        }
 
         // Validasi input
         if (!startDate || !endDate || !departmentId) {
