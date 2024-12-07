@@ -2,10 +2,10 @@ const Department = require('../models/department');
 const {StatusCodes} = require("http-status-codes");
 
 exports.createDepartment = async (req, res, next) => {
-    const {name} = req.body;
+    const {id, name} = req.body;
 
     try {
-        const department = await Department.create({name})
+        const department = await Department.create({id: id, name: name})
         return res.status(StatusCodes.CREATED).json(department);
     } catch (error) {
         next(error)

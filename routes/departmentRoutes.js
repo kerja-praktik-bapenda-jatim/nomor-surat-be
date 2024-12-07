@@ -11,7 +11,7 @@ const authMiddleware = require('../middlewares/authMiddleware');
 
 router.post('/', createDepartment);
 router.get('/', getAllDepartment);
-router.get('/:id', authMiddleware, getDepartmentById);
+router.get('/:id', getDepartmentById);
 router.delete('/', authMiddleware, deleteAllDepartment);
 
 module.exports = router;

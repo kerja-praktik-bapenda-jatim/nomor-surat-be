@@ -10,6 +10,8 @@ const {sequelize, connectDb} = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
 const authMiddleware = require('./middlewares/authMiddleware');
 const letterRoutes = require('./routes/letterRoutes')
+const levelRoutes = require('./routes/levelRoutes')
+const classificationRoutes = require('./routes/classificationRoutes')
 const notaRoutes = require('./routes/notaRoutes')
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes')
@@ -30,6 +32,8 @@ app.get('/api', (req, res) => {
 
 app.use('/api/auth', authRoutes);
 app.use('/api/letter', authMiddleware, letterRoutes)
+app.use('/api/level', levelRoutes)
+app.use('/api/classification', classificationRoutes)
 app.use('/api/nota', authMiddleware, notaRoutes)
 app.use('/api/user', authMiddleware, userRoutes)
 app.use('/api/department', departmentRoutes)

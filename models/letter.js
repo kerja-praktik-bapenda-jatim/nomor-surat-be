@@ -1,5 +1,7 @@
 const {DataTypes} = require('sequelize');
 const {sequelize} = require('../config/db');
+const Classification = require("./classification");
+const Level = require("./level");
 
 const Letter = sequelize.define('Letter', {
     id: {
@@ -31,6 +33,13 @@ const Letter = sequelize.define('Letter', {
         type: DataTypes.BOOLEAN,
         defaultValue: false,
         allowNull: false,
+    },
+    attachmentCount: {
+        type: DataTypes.INTEGER,
+        defaultValue: 0,
+    },
+    description: {
+        type: DataTypes.STRING,
     },
     departmentId: {
         type: DataTypes.UUID,
@@ -67,5 +76,11 @@ const Letter = sequelize.define('Letter', {
     }
 },
 );
+
+Classification.hasMany(Letter, {foreignKey: 'classificationId'});
+Letter.belongsTo(Classification, {foreignKey: 'classificationId'});
+
+Level.hasMany(Letter, {foreignKey: 'levelId'});
+Letter.belongsTo(Level, {foreignKey: 'levelId'});
 
 module.exports = Letter;

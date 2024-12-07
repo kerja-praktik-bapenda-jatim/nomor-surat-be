@@ -9,13 +9,25 @@ const ExcelJS = require('exceljs');
 const Department = require('../models/department');
 
 exports.createLetter = async (req, res, next) => {
-    const {spareCounts, date, subject, to, departmentId} = req.body;
-    const file = req.file;
+    const {
+        spareCounts,
+        date,
+        subject,
+        to,
+        departmentId,
+        classificationId,
+        levelId,
+        attachmentCount,
+        description
+    } = req.body;
+    const file = req.file
+
+    const isAdmin = req.payload.isAdmin
 
     try {
 
         if (spareCounts) {
-            if (!req.payload.isAdmin) {
+            if (!isAdmin) {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
             }
 
@@ -67,12 +79,20 @@ exports.createLetter = async (req, res, next) => {
                 createdLetters
             });
         } else {
+            if (!classificationId || !levelId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Please enter all mandatory field'});
+            }
+
             const letter = await Letter.create({
                 date: date,
                 userId: req.payload.userId,
-                departmentId: req.payload.departmentId,
+                departmentId: isAdmin ? departmentId : req.payload.departmentId,
                 subject: subject,
                 to: to,
+                classificationId: classificationId,
+                levelId: levelId,
+                attachmentCount: attachmentCount < 0 ? 0 : attachmentCount,
+                description: description,
                 filename: file ? file.originalname : null,
                 filePath: file ? path.join('uploads', file.filename) : null,
             })

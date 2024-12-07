@@ -3,9 +3,9 @@ const {DataTypes} = require("sequelize");
 
 const Department = sequelize.define('Department', {
     id: {
-        type: DataTypes.UUID,
-        defaultValue: DataTypes.UUIDV4,
+        type: DataTypes.STRING,
         primaryKey: true,
+        allowNull: false,
     },
     name: {
         type: DataTypes.STRING,
