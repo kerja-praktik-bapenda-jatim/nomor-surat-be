@@ -49,9 +49,9 @@ exports.createLetter = async (req, res, next) => {
             }
 
             if (!departmentId) {
-                return res.status(StatusCodes.BAD_REQUEST).json({ message: 'Bidang harus dipilih' });
+                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Bidang harus dipilih'});
             }
-            
+
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
@@ -206,6 +206,8 @@ exports.downloadLetterFile = async (req, res, next) => {
 };
 
 exports.updateLetterById = async (req, res, next) => {
+    const MAX_UPDATE_DAYS = 20;
+
     const id = req.params.id;
     const {subject, to} = req.body;
     const file = req.file;
@@ -215,6 +217,14 @@ exports.updateLetterById = async (req, res, next) => {
 
         if (!letter) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'});
+        }
+
+        const createdAt = new Date(letter.createdAt)
+        const now = new Date()
+        const diff = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+
+        if (diff > MAX_UPDATE_DAYS) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update letter after ${MAX_UPDATE_DAYS} days of creation`})
         }
 
         const updatedData = {
@@ -312,7 +322,7 @@ exports.deleteAllLetter = async (req, res, next) => {
 
 exports.exportLetter = async (req, res) => {
     try {
-        const { startDate, endDate, departmentId } = req.query;
+        const {startDate, endDate, departmentId} = req.query;
 
         // Validasi input
         if (!startDate || !endDate || !departmentId) {
@@ -370,12 +380,12 @@ exports.exportLetter = async (req, res) => {
         // Tambahkan header
         worksheet.columns = [
             // { header: 'ID', key: 'id', width: 36 },
-            { header: 'Nomor Surat', key: 'number', width: 11 },
-            { header: 'Tanggal Surat', key: 'date', width: 20 },
-            { header: 'Kepada', key: 'to', width: 45 },
-            { header: 'Perihal', key: 'subject', width: 60 },
-            { header: 'Pembuat', key: 'userId', width: 36 },
-            { header: 'Bidang', key: 'departmentName', width: 15 },
+            {header: 'Nomor Surat', key: 'number', width: 11},
+            {header: 'Tanggal Surat', key: 'date', width: 20},
+            {header: 'Kepada', key: 'to', width: 45},
+            {header: 'Perihal', key: 'subject', width: 60},
+            {header: 'Pembuat', key: 'userId', width: 36},
+            {header: 'Bidang', key: 'departmentName', width: 15},
         ];
 
         // Tambahkan data ke worksheet
