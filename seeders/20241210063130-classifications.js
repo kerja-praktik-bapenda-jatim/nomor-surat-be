@@ -17,7 +17,7 @@ module.exports = {
 
         return queryInterface.bulkInsert('classifications', classifications.map(item => ({
             id: item.code,
-            name: item.name,
+            name: item.name ? item.name : '-',
             created_at: new Date(),
             updated_at: new Date(),
         })));
