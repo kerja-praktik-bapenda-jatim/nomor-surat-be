@@ -387,15 +387,19 @@ exports.exportLetter = async (req, res) => {
         const end = new Date(endDate);
         end.setHours(23, 59, 59);
 
+        const filterConditions = {
+            date: {
+                [Op.between]: [start, end],
+            },
+            reserved: 1,
+        };
+        if (departmentId) {
+            filterConditions.departmentId = departmentId;
+        }
+
         // Query ke database berdasarkan filter tanggal dan bidang
         const letters = await Letter.findAll({
-            where: {
-                departmentId,
-                date: {
-                    [Op.between]: [start, end],
-                },
-                reserved: 1,
-            },
+            where: filterConditions,
             order: [['number', 'ASC']],
         });
 

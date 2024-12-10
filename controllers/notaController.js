@@ -361,7 +361,7 @@ exports.deleteAllNota = async (req, res, next) => {
 
 exports.exportNota = async (req, res) => {
     try {
-        const {startDate, endDate} = req.query;
+        const {startDate, endDate, departmentId} = req.query;
 
         // Validasi input
         if (!startDate || !endDate) {
@@ -376,14 +376,19 @@ exports.exportNota = async (req, res) => {
         const end = new Date(endDate);
         end.setHours(23, 59, 59);
 
+        const filterConditions = {
+            date: {
+                [Op.between]: [start, end],
+            },
+            reserved: 1,
+        };
+        if (departmentId) {
+            filterConditions.departmentId = departmentId;
+        }
+
         // Query ke database berdasarkan filter tanggal dan bidang
         const nota = await Nota.findAll({
-            where: {
-                date: {
-                    [Op.between]: [start, end],
-                },
-                reserved: 1,
-            },
+            where: filterConditions,
             order: [['number', 'ASC']],
         });
 
