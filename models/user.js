@@ -1,8 +1,8 @@
 const {DataTypes} = require('sequelize');
 const {sequelize} = require('../config/db');
-const bcrypt = require('bcrypt');
 const Department = require("./department");
 const Letter = require("./letter");
+const {hashPassword} = require("../utils/util");
 
 const User = sequelize.define('User', {
     id: {
@@ -26,7 +26,7 @@ const User = sequelize.define('User', {
 }, {
     hooks: {
         async beforeCreate(record, options) {
-            record.password = await bcrypt.hash(record.password, 10);
+            record.password = await hashPassword(record.password, 10);
         }
     }
 });
