@@ -7,6 +7,8 @@ const {StatusCodes} = require('http-status-codes');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
 const Department = require('../models/department');
+const Level = require('../models/level');
+const Classification = require('../models/classification');
 
 exports.createLetter = async (req, res, next) => {
     const {
@@ -165,6 +167,16 @@ exports.getAllLetter = async (req, res, next) => {
             where: filterConditions,
             order: [
                 ['number', 'DESC'],
+            ],
+            include: [
+                {
+                    model: Level,
+                    attributes: ['name']
+                },
+                {
+                    model: Classification,
+                    attributes: ['name']
+                }
             ]
         })
         if (count === 0) {
@@ -180,7 +192,17 @@ exports.getLetterById = async (req, res, next) => {
     const id = req.params.id
     try {
         const letter = await Letter.findByPk(id, {
-            attributes: {exclude: ['filePath']}
+            attributes: {exclude: ['filePath']},
+            include: [
+                {
+                    model: Level,
+                    attributes: ['name']
+                },
+                {
+                    model: Classification,
+                    attributes: ['name']
+                }
+            ]
         })
         if (!letter) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Not found'})
