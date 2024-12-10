@@ -8,7 +8,7 @@ const bodyParser = require('body-parser');
 const cors = require('cors');
 const {sequelize, connectDb} = require('./config/db');
 const errorHandler = require('./middlewares/errorHandler');
-const authMiddleware = require('./middlewares/authMiddleware');
+const {authenticateAdmin, authenticateToken} = require('./middlewares/authMiddleware');
 const letterRoutes = require('./routes/letterRoutes')
 const levelRoutes = require('./routes/levelRoutes')
 const classificationRoutes = require('./routes/classificationRoutes')
@@ -31,11 +31,11 @@ app.get('/api', (req, res) => {
 })
 
 app.use('/api/auth', authRoutes);
-app.use('/api/letter', authMiddleware, letterRoutes)
+app.use('/api/letter', authenticateToken, letterRoutes)
 app.use('/api/level', levelRoutes)
 app.use('/api/classification', classificationRoutes)
-app.use('/api/nota', authMiddleware, notaRoutes)
-app.use('/api/user', authMiddleware, userRoutes)
+app.use('/api/nota', authenticateToken, authenticateAdmin, notaRoutes)
+app.use('/api/user', authenticateToken, userRoutes)
 app.use('/api/department', departmentRoutes)
 app.use(errorHandler);
 

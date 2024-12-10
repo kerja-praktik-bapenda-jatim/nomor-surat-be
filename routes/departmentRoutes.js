@@ -7,11 +7,11 @@ const {
 } = require('../controllers/departmentController');
 const router = express.Router();
 
-const authMiddleware = require('../middlewares/authMiddleware');
+const {authenticateToken} = require('../middlewares/authMiddleware');
 
 router.post('/', createDepartment);
 router.get('/', getAllDepartment);
 router.get('/:id', getDepartmentById);
-router.delete('/', authMiddleware, deleteAllDepartment);
+router.delete('/', authenticateToken, deleteAllDepartment);
 
 module.exports = router;

@@ -7,11 +7,11 @@ const {
 } = require('../controllers/levelController');
 const router = express.Router();
 
-const authMiddleware = require('../middlewares/authMiddleware');
+const {authenticateToken} = require('../middlewares/authMiddleware');
 
 router.post('/', createLevel);
 router.get('/', getAllLevel);
 router.get('/:id', getLevelById);
-router.delete('/', authMiddleware, deleteAllLevel);
+router.delete('/', authenticateToken, deleteAllLevel);
 
 module.exports = router;

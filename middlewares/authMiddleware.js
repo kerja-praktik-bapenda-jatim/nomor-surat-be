@@ -15,4 +15,12 @@ const authenticateToken = (req, res, next) => {
     });
 };
 
-module.exports = authenticateToken;
+const authenticateAdmin = (req, res, next) => {
+    if (req.payload.isAdmin) {
+        next()
+    } else {
+        return res.status(StatusCodes.FORBIDDEN).json({message: "Access denied. Admin privileges required to access this endpoint."})
+    }
+};
+
+module.exports = {authenticateToken, authenticateAdmin};

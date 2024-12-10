@@ -7,11 +7,11 @@ const {
 } = require('../controllers/classificationController');
 const router = express.Router();
 
-const authMiddleware = require('../middlewares/authMiddleware');
+const {authenticateToken} = require('../middlewares/authMiddleware');
 
 router.post('/', createClassification);
 router.get('/', getAllClassification);
 router.get('/:id', getClassificationById);
-router.delete('/', authMiddleware, deleteAllClassification);
+router.delete('/', authenticateToken, deleteAllClassification);
 
 module.exports = router;
