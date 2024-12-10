@@ -401,6 +401,12 @@ exports.exportLetter = async (req, res) => {
         const letters = await Letter.findAll({
             where: filterConditions,
             order: [['number', 'ASC']],
+            include: [
+                {
+                    model: User,
+                    attributes: ['username'], 
+                },
+            ],
         });
 
         const department = await Department.findOne({
@@ -438,7 +444,7 @@ exports.exportLetter = async (req, res) => {
             {header: 'Tanggal Surat', key: 'date', width: 20},
             {header: 'Kepada', key: 'to', width: 45},
             {header: 'Perihal', key: 'subject', width: 60},
-            {header: 'Pembuat', key: 'userId', width: 36},
+            {header: 'Pembuat', key: 'userName', width: 36},
             {header: 'Bidang', key: 'departmentName', width: 15},
         ];
 
@@ -448,7 +454,7 @@ exports.exportLetter = async (req, res) => {
                 // id: letter.id,
                 number: letter.number,
                 date: formatDate(letter.date),
-                userId: letter.userId,
+                userName: letter.User.username,
                 departmentName: department.name,
                 to: letter.to,
                 subject: letter.subject,
