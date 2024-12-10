@@ -260,18 +260,21 @@ exports.updateLetterById = async (req, res, next) => {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'});
         }
 
-        const createdAt = new Date(letter.createdAt)
         const now = new Date()
-        const diff = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+        if (letter.reserved) {
+            const reservedAt = new Date(letter.lastReserved)
+            const diff = Math.floor((now - reservedAt) / (1000 * 60 * 60 * 24));
 
-        if (diff > MAX_UPDATE_DAYS) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update letter after ${MAX_UPDATE_DAYS} days of creation`})
+            if (diff > MAX_UPDATE_DAYS) {
+                return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update letter after ${MAX_UPDATE_DAYS} days of creation`})
+            }
         }
 
         const updatedData = {
             subject: subject,
             to: to,
             reserved: true,
+            lastReserved: letter.reserved ? new Date(letter.lastReserved) : now,
             userId: req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
@@ -330,8 +333,13 @@ exports.deleteLetterById = async (req, res, next) => {
                             filename: null,
                             filePath: null,
                             reserved: false,
+                            lastReserved: null,
                             userId: null,
                             departmentId: req.payload.departmentId,
+                            classificationId: null,
+                            levelId: null,
+                            attachmentCount: null,
+                            description: null,
                         },
                     );
 
@@ -404,7 +412,7 @@ exports.exportLetter = async (req, res) => {
             include: [
                 {
                     model: User,
-                    attributes: ['username'], 
+                    attributes: ['username'],
                 },
             ],
         });

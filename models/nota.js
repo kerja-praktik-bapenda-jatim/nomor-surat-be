@@ -43,6 +43,9 @@ const Nota = sequelize.define('Nota', {
         },
         departmentId: {
             type: DataTypes.UUID,
+        },
+        lastReserved: {
+            type: DataTypes.DATE,
         }
     },
     {
@@ -58,6 +61,7 @@ const Nota = sequelize.define('Nota', {
                 // Set nilai number baru untuk Nota yang sedang dibuat
                 record.number = newNumber;
                 record.reserved = true;
+                record.lastReserved = Date.now();
             },
             async beforeBulkCreate(record, options) {
                 // Cari nilai number tertinggi sebelum bulk insert

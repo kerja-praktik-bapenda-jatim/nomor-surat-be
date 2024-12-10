@@ -43,6 +43,9 @@ const Letter = sequelize.define('Letter', {
     },
     departmentId: {
         type: DataTypes.UUID,
+    },
+    lastReserved: {
+        type: DataTypes.DATE
     }
 },
 {
@@ -58,6 +61,7 @@ const Letter = sequelize.define('Letter', {
             // Set nilai number baru untuk letter yang sedang dibuat
             record.number = newNumber;
             record.reserved = true;
+            record.lastReserved = Date.now();
         },
         async beforeBulkCreate (record, options) {
             // Cari nilai number tertinggi sebelum bulk insert

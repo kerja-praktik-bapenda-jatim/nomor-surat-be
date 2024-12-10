@@ -54,9 +54,14 @@ exports.createNota = async (req, res, next) => {
                 }
             }
 
+            if (!departmentId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Bidang harus dipilih'});
+            }
+
             const notas = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
+                departmentId: departmentId,
             }));
 
             // Bulk create notas
@@ -97,9 +102,6 @@ exports.getAllNota = async (req, res, next) => {
     const filterConditions = {}
 
     if (reserved) {
-        if (!req.payload.isAdmin) {
-            delete filterConditions.userId
-        }
         filterConditions.reserved = {
             [Op.eq]: stringToBoolean(reserved),
         }
@@ -249,18 +251,21 @@ exports.updateNotaById = async (req, res, next) => {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Nota not found'});
         }
 
-        const createdAt = new Date(nota.createdAt)
         const now = new Date()
-        const diff = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+        if (nota.reserved) {
+            const reservedAt = new Date(nota.lastReserved)
+            const diff = Math.floor((now - reservedAt) / (1000 * 60 * 60 * 24));
 
-        if (diff > MAX_UPDATE_DAYS) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update nota after ${MAX_UPDATE_DAYS} days of creation`})
+            if (diff > MAX_UPDATE_DAYS) {
+                return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update nota after ${MAX_UPDATE_DAYS} days of creation`})
+            }
         }
 
         const updatedData = {
             subject: subject,
             to: to,
             reserved: true,
+            lastReserved: nota.reserved ? new Date(nota.lastReserved) : now,
             userId: req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
@@ -322,7 +327,13 @@ exports.deleteNotaById = async (req, res, next) => {
                             filename: null,
                             filePath: null,
                             reserved: false,
+                            lastReserved: null,
                             userId: null,
+                            departmentId: null,
+                            classificationId: null,
+                            levelId: null,
+                            attachmentCount: null,
+                            description: null,
                         },
                     );
 
