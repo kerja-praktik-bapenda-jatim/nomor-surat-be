@@ -25,10 +25,9 @@ exports.createLetter = async (req, res, next) => {
     const isAdmin = req.payload.isAdmin
 
     try {
-
         if (spareCounts) {
             if (!isAdmin) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to access this endpoint.'})
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk letter.'})
             }
 
             const date = new Date(req.body.date);
@@ -229,7 +228,7 @@ exports.updateLetterById = async (req, res, next) => {
     const MAX_UPDATE_DAYS = 20;
 
     const id = req.params.id;
-    const {subject, to} = req.body;
+    const {subject, to, classificationId, levelId, attachmentCount, description} = req.body;
     const file = req.file;
 
     try {
@@ -252,6 +251,10 @@ exports.updateLetterById = async (req, res, next) => {
             to: to,
             reserved: true,
             userId: req.payload.userId,
+            classificationId: classificationId,
+            levelId: levelId,
+            attachmentCount: attachmentCount,
+            description: description,
         };
 
         if (file) {

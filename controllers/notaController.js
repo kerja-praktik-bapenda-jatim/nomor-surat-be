@@ -8,14 +8,20 @@ const ExcelJS = require('exceljs');
 const Department = require('../models/department');
 
 exports.createNota = async (req, res, next) => {
-    const {spareCounts, date, subject, to} = req.body;
+    const {
+        spareCounts,
+        date,
+        subject,
+        to,
+        departmentId,
+        classificationId,
+        levelId,
+        attachmentCount,
+        description
+    } = req.body;
     const file = req.file;
 
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-        }
-
         if (spareCounts) {
             const date = new Date(req.body.date);
 
@@ -60,11 +66,20 @@ exports.createNota = async (req, res, next) => {
                 createdNotas
             });
         } else {
+            if (!classificationId || !levelId) {
+                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Please enter all mandatory field'});
+            }
+
             const nota = await Nota.create({
                 date: date,
                 userId: req.payload.userId,
+                departmentId: departmentId,
                 subject: subject,
                 to: to,
+                classificationId: classificationId,
+                levelId: levelId,
+                attachmentCount: attachmentCount < 0 ? 0 : attachmentCount,
+                description: description,
                 filename: file ? file.originalname : null,
                 filePath: file ? path.join('uploads', file.filename) : null,
             })
@@ -79,9 +94,6 @@ exports.getAllNota = async (req, res, next) => {
     const {start, end, subject, to, reserved, recent} = req.query
     const filterConditions = {}
 
-    if (!req.payload.isAdmin) {
-        return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-    }
     if (reserved) {
         if (!req.payload.isAdmin) {
             delete filterConditions.userId
@@ -202,18 +214,25 @@ exports.downloadNotaFile = async (req, res, next) => {
 };
 
 exports.updateNotaById = async (req, res, next) => {
+    const MAX_UPDATE_DAYS = 20;
+
     const id = req.params.id;
-    const {subject, to} = req.body;
+    const {subject, to, classificationId, levelId, attachmentCount, description} = req.body;
     const file = req.file;
 
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-        }
         const nota = await Nota.findByPk(id);
 
         if (!nota) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Nota not found'});
+        }
+
+        const createdAt = new Date(nota.createdAt)
+        const now = new Date()
+        const diff = Math.floor((now - createdAt) / (1000 * 60 * 60 * 24));
+
+        if (diff > MAX_UPDATE_DAYS) {
+            return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update nota after ${MAX_UPDATE_DAYS} days of creation`})
         }
 
         const updatedData = {
@@ -221,6 +240,10 @@ exports.updateNotaById = async (req, res, next) => {
             to: to,
             reserved: true,
             userId: req.payload.userId,
+            classificationId: classificationId,
+            levelId: levelId,
+            attachmentCount: attachmentCount,
+            description: description,
         };
 
         if (file) {
@@ -316,7 +339,7 @@ exports.deleteAllNota = async (req, res, next) => {
 
 exports.exportNota = async (req, res) => {
     try {
-        const { startDate, endDate } = req.query;
+        const {startDate, endDate} = req.query;
 
         // Validasi input
         if (!startDate || !endDate) {
@@ -367,10 +390,10 @@ exports.exportNota = async (req, res) => {
         // Tambahkan header
         worksheet.columns = [
             // { header: 'ID', key: 'id', width: 36 },
-            { header: 'Nomor Surat', key: 'number', width: 11 },
-            { header: 'Tanggal Surat', key: 'date', width: 20 },
-            { header: 'Kepada', key: 'to', width: 45 },
-            { header: 'Perihal', key: 'subject', width: 60 },
+            {header: 'Nomor Surat', key: 'number', width: 11},
+            {header: 'Tanggal Surat', key: 'date', width: 20},
+            {header: 'Kepada', key: 'to', width: 45},
+            {header: 'Perihal', key: 'subject', width: 60},
         ];
 
         // Tambahkan data ke worksheet
