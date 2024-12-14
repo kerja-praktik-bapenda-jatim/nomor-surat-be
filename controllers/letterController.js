@@ -61,10 +61,6 @@ exports.createLetter = async (req, res, next) => {
                 }
             }
 
-            if (!departmentId) {
-                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Bidang harus dipilih'});
-            }
-
             const letters = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
@@ -105,7 +101,6 @@ exports.createLetter = async (req, res, next) => {
 }
 
 exports.getAllLetter = async (req, res, next) => {
-    console.log(req.query)
     const {start, end, subject, to, reserved, recent} = req.query
     const filterConditions = {}
 
@@ -115,7 +110,12 @@ exports.getAllLetter = async (req, res, next) => {
     if (reserved) {
         if (!req.payload.isAdmin) {
             delete filterConditions.userId
-            filterConditions.departmentId = req.payload.departmentId
+            filterConditions.departmentId = {
+                [Op.or]: [
+                    req.payload.departmentId,
+                    null
+                ]
+            };
         }
         filterConditions.reserved = {
             [Op.eq]: stringToBoolean(reserved),
@@ -335,7 +335,7 @@ exports.deleteLetterById = async (req, res, next) => {
                             reserved: false,
                             lastReserved: null,
                             userId: null,
-                            departmentId: req.payload.departmentId,
+                            departmentId: null,
                             classificationId: null,
                             levelId: null,
                             attachmentCount: null,

@@ -34,7 +34,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/letter', authenticateToken, letterRoutes)
 app.use('/api/level', levelRoutes)
 app.use('/api/classification', classificationRoutes)
-app.use('/api/nota', authenticateToken, authenticateAdmin, notaRoutes)
+app.use('/api/nota', authenticateToken, notaRoutes)
 app.use('/api/user', authenticateToken, userRoutes)
 app.use('/api/department', departmentRoutes)
 app.use(errorHandler);

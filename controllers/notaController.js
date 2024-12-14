@@ -23,8 +23,14 @@ exports.createNota = async (req, res, next) => {
     } = req.body;
     const file = req.file;
 
+    const isAdmin = req.payload.isAdmin
+
     try {
         if (spareCounts) {
+            if (!isAdmin) {
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk nota dinas.'})
+            }
+
             const date = new Date(req.body.date);
 
             const startToday = new Date();
@@ -54,10 +60,6 @@ exports.createNota = async (req, res, next) => {
                 }
             }
 
-            if (!departmentId) {
-                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Bidang harus dipilih'});
-            }
-
             const notas = Array.from({length: spareCounts}, () => ({
                 date: date,
                 userId: req.payload.userId,
@@ -80,7 +82,7 @@ exports.createNota = async (req, res, next) => {
             const nota = await Nota.create({
                 date: date,
                 userId: req.payload.userId,
-                departmentId: departmentId,
+                departmentId: isAdmin ? departmentId : req.payload.departmentId,
                 subject: subject,
                 to: to,
                 classificationId: classificationId,
@@ -101,7 +103,19 @@ exports.getAllNota = async (req, res, next) => {
     const {start, end, subject, to, reserved, recent} = req.query
     const filterConditions = {}
 
+    if (!req.payload.isAdmin) {
+        filterConditions.userId = req.payload.userId
+    }
     if (reserved) {
+        if (!req.payload.isAdmin) {
+            delete filterConditions.userId
+            filterConditions.departmentId = {
+                [Op.or]: [
+                    req.payload.departmentId,
+                    null
+                ]
+            };
+        }
         filterConditions.reserved = {
             [Op.eq]: stringToBoolean(reserved),
         }
@@ -176,9 +190,6 @@ exports.getAllNota = async (req, res, next) => {
 exports.getNotaById = async (req, res, next) => {
     const id = req.params.id
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-        }
         const nota = await Nota.findByPk(id, {
             attributes: {exclude: ['filePath']},
             include: [
@@ -206,10 +217,6 @@ exports.downloadNotaFile = async (req, res, next) => {
     const {id} = req.params;
 
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-        }
-
         const nota = await Nota.findByPk(id);
 
         if (!nota) {
@@ -298,9 +305,6 @@ exports.deleteNotaById = async (req, res, next) => {
     const id = req.params.id;
 
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-        }
         const nota = await Nota.findByPk(id);
 
         if (!nota) {
@@ -354,9 +358,6 @@ exports.deleteAllNota = async (req, res, next) => {
     const {truncate} = req.body;
 
     try {
-        if (!req.payload.isAdmin) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Hanya bisa di akses oleh ADMIN'})
-        }
         if (truncate) {
             const count = await Nota.destroy({
                 truncate: truncate,
@@ -405,7 +406,7 @@ exports.exportNota = async (req, res) => {
 
         // Cek jika tidak ada data
         if (nota.length === 0) {
-            return res.status(404).json({
+            return res.status(StatusCodes.NOT_FOUND).json({
                 message: 'Tidak ada data ditemukan untuk filter yang diberikan.',
             });
         }
@@ -460,7 +461,7 @@ exports.exportNota = async (req, res) => {
         res.end();
     } catch (error) {
         console.error('Error saat mengekspor data:', error);
-        res.status(500).json({
+        res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
             message: 'Terjadi kesalahan saat mengekspor data.',
         });
     }
