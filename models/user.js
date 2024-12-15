@@ -2,6 +2,7 @@ const {DataTypes} = require('sequelize');
 const {sequelize} = require('../config/db');
 const Department = require("./department");
 const Letter = require("./letter");
+const Nota = require("./nota");
 const {hashPassword} = require("../utils/util");
 
 const User = sequelize.define('User', {
@@ -36,5 +37,8 @@ User.belongsTo(Department, {foreignKey: 'departmentId'});
 
 User.hasMany(Letter, {foreignKey: 'userId',});
 Letter.belongsTo(User, {foreignKey: 'userId'});
+
+User.hasMany(Nota, {foreignKey: 'userId',});
+Nota.belongsTo(User, {foreignKey: 'userId'});
 
 module.exports = User;
