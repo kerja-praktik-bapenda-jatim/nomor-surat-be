@@ -462,16 +462,16 @@ exports.exportLetter = async (req, res) => {
         // Tambahkan header
         worksheet.columns = [
             // { header: 'ID', key: 'id', width: 36 },
-            {header: 'Nomor Surat', key: 'number', width: 11},
-            {header: 'Tanggal Surat', key: 'date', width: 20},
-            {header: 'Kepada', key: 'to', width: 45},
-            {header: 'Perihal', key: 'subject', width: 60},
-            {header: 'Pembuat', key: 'userName', width: 36},
+            {header: 'Kode Klasifikasi', key: 'classificationId', width: 15},
+            {header: 'Nama Klasifikasi', key: 'classificationName', width: 35},
+            {header: 'Nomor Surat', key: 'number', width: 13},
+            {header: 'Tanggal Surat', key: 'date', width: 18},
+            {header: 'Kepada', key: 'to', width: 40},
+            {header: 'Perihal', key: 'subject', width: 40},
             {header: 'Sifat', key: 'levelName', width: 15},
-            {header: 'Kode Bidang', key: 'departmentId', width: 10},
-            {header: 'Bidang', key: 'departmentName', width: 20},
-            {header: 'Kode Klasifikasi', key: 'classificationId', width: 10},
-            {header: 'Nama Klasifikasi', key: 'classificationName', width: 40},
+            {header: 'Kode Bidang', key: 'departmentId', width: 12},
+            {header: 'Bidang', key: 'departmentName', width: 25},
+            {header: 'Pembuat', key: 'userName', width: 36},
         ];
 
         // Tambahkan data ke worksheet
