@@ -18,12 +18,14 @@ exports.getAllClassification = async (req, res, next) => {
     const {parentId, recursive} = req.query;
     const filterConditions = {}
 
-    if (recursive && stringToBoolean(recursive)) {
-        filterConditions.id = {
-            [Op.like]: `${parentId}%`
+    if (parentId) {
+        if (recursive && stringToBoolean(recursive)) {
+            filterConditions.id = {
+                [Op.like]: `${parentId}%`
+            }
+        } else {
+            filterConditions.id = parentId
         }
-    } else {
-        filterConditions.id = parentId
     }
 
     try {
