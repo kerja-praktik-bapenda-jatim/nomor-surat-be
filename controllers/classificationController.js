@@ -1,5 +1,7 @@
 const Classification = require('../models/classification');
 const {StatusCodes} = require("http-status-codes");
+const {Op} = require("sequelize");
+const {stringToBoolean} = require("../utils/util");
 
 exports.createClassification = async (req, res, next) => {
     const {id, name} = req.body;
@@ -13,11 +15,23 @@ exports.createClassification = async (req, res, next) => {
 }
 
 exports.getAllClassification = async (req, res, next) => {
+    const {parentId, recursive} = req.query;
+    const filterConditions = {}
+
+    if (recursive && stringToBoolean(recursive)) {
+        filterConditions.id = {
+            [Op.like]: `${parentId}%`
+        }
+    } else {
+        filterConditions.id = parentId
+    }
+
     try {
         const {count, rows} = await Classification.findAndCountAll({
             order: [
                 ['createdAt', 'ASC'],
-            ]
+            ],
+            where: filterConditions
         })
         if (count === 0) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Classification not found'})

@@ -2,12 +2,13 @@ const path = require('path');
 const fs = require('fs');
 const Nota = require('../models/nota');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean} = require('../utils/util');
+const {stringToBoolean, formatDate, currentTimestamp} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const ExcelJS = require('exceljs');
 const Department = require('../models/department');
 const Level = require("../models/level");
 const Classification = require("../models/classification");
+const User = require("../models/user");
 
 exports.createNota = async (req, res, next) => {
     const {
@@ -250,6 +251,7 @@ exports.updateNotaById = async (req, res, next) => {
     const id = req.params.id;
     const {subject, to, classificationId, levelId, attachmentCount, description} = req.body;
     const file = req.file;
+    const isAdmin = req.payload.isAdmin
 
     try {
         const nota = await Nota.findByPk(id);
@@ -272,8 +274,9 @@ exports.updateNotaById = async (req, res, next) => {
             subject: subject,
             to: to,
             reserved: true,
+            departmentId: (nota.reserved && isAdmin) ? nota.departmentId : req.payload.departmentId,
             lastReserved: nota.reserved ? new Date(nota.lastReserved) : now,
-            userId: req.payload.userId,
+            userId: (nota.reserved && isAdmin) ? nota.userId : req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
             attachmentCount: attachmentCount,
@@ -373,11 +376,23 @@ exports.deleteAllNota = async (req, res, next) => {
 
 exports.exportNota = async (req, res) => {
     try {
-        const {startDate, endDate, departmentId} = req.query;
+        const {startDate, endDate, departmentId, classificationId, recursive} = req.query;
+        const isAdmin = req.payload.isAdmin
+        const filterConditions = {}
+
+        if (classificationId) {
+            if (recursive && stringToBoolean(recursive)) {
+                filterConditions.classificationId = {
+                    [Op.like]: `${classificationId}%`
+                }
+            } else {
+                filterConditions.classificationId = classificationId
+            }
+        }
 
         // Validasi input
         if (!startDate || !endDate) {
-            return res.status(400).json({
+            return res.status(StatusCodes.BAD_REQUEST).json({
                 message: 'Tanggal harus diisi.',
             });
         }
@@ -388,12 +403,22 @@ exports.exportNota = async (req, res) => {
         const end = new Date(endDate);
         end.setHours(23, 59, 59);
 
-        const filterConditions = {
-            date: {
-                [Op.between]: [start, end],
-            },
-            reserved: 1,
-        };
+        filterConditions.date = {
+            [Op.between]: [start, end],
+        }
+        filterConditions.reserved = 1
+
+        if (isAdmin) {
+            if (departmentId) {
+                filterConditions.departmentId = departmentId;
+            }
+        } else {
+            if (departmentId) {
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'User role can only export own department nota'})
+            }
+            filterConditions.departmentId = req.payload.departmentId;
+        }
+
         if (departmentId) {
             filterConditions.departmentId = departmentId;
         }
@@ -402,7 +427,29 @@ exports.exportNota = async (req, res) => {
         const nota = await Nota.findAll({
             where: filterConditions,
             order: [['number', 'ASC']],
+            include: [
+                {
+                    model: User,
+                    attributes: ['username'],
+                    include: [
+                        {
+                            model: Department,
+                            attributes: ['id', 'name'],
+                        },
+                    ],
+                },
+                {
+                    model: Classification,
+                    attributes: ['id', 'name'],
+                },
+                {
+                    model: Level,
+                    attributes: ['name']
+                }
+            ],
         });
+
+        const filename = `Nota-Dinas_${currentTimestamp()}.xlsx`
 
         // Cek jika tidak ada data
         if (nota.length === 0) {
@@ -410,17 +457,6 @@ exports.exportNota = async (req, res) => {
                 message: 'Tidak ada data ditemukan untuk filter yang diberikan.',
             });
         }
-
-        const formatDate = (date) => {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
-            const year = date.getFullYear();
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-        };
 
         // Buat workbook dan worksheet
         const workbook = new ExcelJS.Workbook();
@@ -433,6 +469,12 @@ exports.exportNota = async (req, res) => {
             {header: 'Tanggal Surat', key: 'date', width: 20},
             {header: 'Kepada', key: 'to', width: 45},
             {header: 'Perihal', key: 'subject', width: 60},
+            {header: 'Pembuat', key: 'userName', width: 36},
+            {header: 'Sifat', key: 'levelName', width: 15},
+            {header: 'Kode Bidang', key: 'departmentId', width: 10},
+            {header: 'Bidang', key: 'departmentName', width: 20},
+            {header: 'Kode Klasifikasi', key: 'classificationId', width: 10},
+            {header: 'Nama Klasifikasi', key: 'classificationName', width: 40},
         ];
 
         // Tambahkan data ke worksheet
@@ -441,8 +483,14 @@ exports.exportNota = async (req, res) => {
                 // id: letter.id,
                 number: data.number,
                 date: formatDate(data.date),
+                userName: data.User.username,
+                departmentId: data.departmentId,
+                departmentName: data.User.Department.name,
                 to: data.to,
                 subject: data.subject,
+                levelName: data.Level.name,
+                classificationId: data.Classification.id,
+                classificationName: data.Classification.name
             });
         });
 
@@ -453,7 +501,7 @@ exports.exportNota = async (req, res) => {
         );
         res.setHeader(
             'Content-Disposition',
-            'attachment; filename=Nota_Dinas.xlsx'
+            `attachment; filename=${filename}`
         );
 
         // Kirim file Excel ke response

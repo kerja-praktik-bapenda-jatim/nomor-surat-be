@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean} = require('../utils/util');
+const {stringToBoolean, formatDate, currentTimestamp} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
@@ -252,6 +252,7 @@ exports.updateLetterById = async (req, res, next) => {
     const id = req.params.id;
     const {subject, to, classificationId, levelId, attachmentCount, description} = req.body;
     const file = req.file;
+    const isAdmin = req.payload.isAdmin
 
     try {
         const letter = await Letter.findByPk(id);
@@ -274,8 +275,9 @@ exports.updateLetterById = async (req, res, next) => {
             subject: subject,
             to: to,
             reserved: true,
+            departmentId: (letter.reserved && isAdmin) ? letter.departmentId : req.payload.departmentId,
             lastReserved: letter.reserved ? new Date(letter.lastReserved) : now,
-            userId: req.payload.userId,
+            userId: (letter.reserved && isAdmin) ? letter.userId : req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
             attachmentCount: attachmentCount,
@@ -375,17 +377,24 @@ exports.deleteAllLetter = async (req, res, next) => {
 
 exports.exportLetter = async (req, res) => {
     try {
-        const {startDate, endDate, departmentId} = req.query;
+        const {startDate, endDate, departmentId, classificationId, recursive} = req.query;
         const isAdmin = req.payload.isAdmin
+        const filterConditions = {}
 
-        if (!isAdmin && departmentId !== req.payload.departmentId) {
-            return res.status(StatusCodes.FORBIDDEN).json({message: 'User role can only export own department letter'})
+        if (classificationId) {
+            if (recursive && stringToBoolean(recursive)) {
+                filterConditions.classificationId = {
+                    [Op.like]: `${classificationId}%`
+                }
+            } else {
+                filterConditions.classificationId = classificationId
+            }
         }
 
         // Validasi input
-        if (!startDate || !endDate || !departmentId) {
+        if (!startDate || !endDate) {
             return res.status(StatusCodes.BAD_REQUEST).json({
-                message: 'Tanggal dan Bidang harus diisi.',
+                message: 'Tanggal harus diisi.',
             });
         }
 
@@ -395,14 +404,20 @@ exports.exportLetter = async (req, res) => {
         const end = new Date(endDate);
         end.setHours(23, 59, 59);
 
-        const filterConditions = {
-            date: {
-                [Op.between]: [start, end],
-            },
-            reserved: 1,
-        };
-        if (departmentId) {
-            filterConditions.departmentId = departmentId;
+        filterConditions.date = {
+            [Op.between]: [start, end],
+        }
+        filterConditions.reserved = 1
+
+        if (isAdmin) {
+            if (departmentId) {
+                filterConditions.departmentId = departmentId;
+            }
+        } else {
+            if (departmentId) {
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'User role can only export own department letter'})
+            }
+            filterConditions.departmentId = req.payload.departmentId;
         }
 
         // Query ke database berdasarkan filter tanggal dan bidang
@@ -413,15 +428,25 @@ exports.exportLetter = async (req, res) => {
                 {
                     model: User,
                     attributes: ['username'],
+                    include: [
+                        {
+                            model: Department,
+                            attributes: ['id', 'name'],
+                        },
+                    ],
                 },
+                {
+                    model: Classification,
+                    attributes: ['id', 'name'],
+                },
+                {
+                    model: Level,
+                    attributes: ['name']
+                }
             ],
         });
 
-        const department = await Department.findOne({
-            where: {
-                id: departmentId,
-            },
-        });
+        const filename = `Surat-Keluar_${currentTimestamp()}.xlsx`
 
         // Cek jika tidak ada data
         if (letters.length === 0) {
@@ -429,17 +454,6 @@ exports.exportLetter = async (req, res) => {
                 message: 'Tidak ada data ditemukan untuk filter yang diberikan.',
             });
         }
-
-        const formatDate = (date) => {
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0'); // Bulan dimulai dari 0
-            const year = date.getFullYear();
-            const hours = String(date.getHours()).padStart(2, '0');
-            const minutes = String(date.getMinutes()).padStart(2, '0');
-            const seconds = String(date.getSeconds()).padStart(2, '0');
-
-            return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`;
-        };
 
         // Buat workbook dan worksheet
         const workbook = new ExcelJS.Workbook();
@@ -453,19 +467,27 @@ exports.exportLetter = async (req, res) => {
             {header: 'Kepada', key: 'to', width: 45},
             {header: 'Perihal', key: 'subject', width: 60},
             {header: 'Pembuat', key: 'userName', width: 36},
-            {header: 'Bidang', key: 'departmentName', width: 15},
+            {header: 'Sifat', key: 'levelName', width: 15},
+            {header: 'Kode Bidang', key: 'departmentId', width: 10},
+            {header: 'Bidang', key: 'departmentName', width: 20},
+            {header: 'Kode Klasifikasi', key: 'classificationId', width: 10},
+            {header: 'Nama Klasifikasi', key: 'classificationName', width: 40},
         ];
 
         // Tambahkan data ke worksheet
-        letters.forEach((letter) => {
+        letters.forEach((data) => {
             worksheet.addRow({
                 // id: letter.id,
-                number: letter.number,
-                date: formatDate(letter.date),
-                userName: letter.User.username,
-                departmentName: department.name,
-                to: letter.to,
-                subject: letter.subject,
+                number: data.number,
+                date: formatDate(data.date),
+                userName: data.User.username,
+                departmentId: data.departmentId,
+                departmentName: data.User.Department.name,
+                to: data.to,
+                subject: data.subject,
+                levelName: data.Level.name,
+                classificationId: data.Classification.id,
+                classificationName: data.Classification.name
             });
         });
 
@@ -476,7 +498,7 @@ exports.exportLetter = async (req, res) => {
         );
         res.setHeader(
             'Content-Disposition',
-            'attachment; filename=Surat-Keluar.xlsx'
+            `attachment; filename=${filename}`
         );
 
         // Kirim file Excel ke response
