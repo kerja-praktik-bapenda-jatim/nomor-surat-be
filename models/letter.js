@@ -2,6 +2,9 @@ const {DataTypes} = require('sequelize');
 const {sequelize} = require('../config/db');
 const Classification = require("./classification");
 const Level = require("./level");
+const JraDescription = require("./jraDescription");
+const StorageLocation = require("./storageLocation");
+const RetentionPeriod = require("./retentionPeriod");
 
 const Letter = sequelize.define('Letter', {
     id: {
@@ -46,6 +49,9 @@ const Letter = sequelize.define('Letter', {
     },
     lastReserved: {
         type: DataTypes.DATE
+    },
+    documentIndexName: {
+        type: DataTypes.STRING,
     }
 },
 {
@@ -86,5 +92,16 @@ Letter.belongsTo(Classification, {foreignKey: 'classificationId'});
 
 Level.hasMany(Letter, {foreignKey: 'levelId'});
 Letter.belongsTo(Level, {foreignKey: 'levelId'});
+
+RetentionPeriod.hasMany(Letter, {foreignKey: 'activeRetentionId', as: 'ActiveLetters'});
+RetentionPeriod.hasMany(Letter, {foreignKey: 'inactiveRetentionId', as: 'InactiveLetters'});
+Letter.belongsTo(RetentionPeriod, {foreignKey: 'activeRetentionId', as: 'ActiveRetentionPeriod'});
+Letter.belongsTo(RetentionPeriod, {foreignKey: 'inactiveRetentionId', as: 'InactiveRetentionPeriod'});
+
+JraDescription.hasMany(Letter, {foreignKey: 'jraDescriptionId'})
+Letter.belongsTo(JraDescription, {foreignKey: 'jraDescriptionId'});
+
+StorageLocation.hasMany(Letter, {foreignKey: 'storageLocationId'});
+Letter.belongsTo(StorageLocation, {foreignKey: 'storageLocationId'});
 
 module.exports = Letter;

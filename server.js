@@ -16,6 +16,9 @@ const notaRoutes = require('./routes/notaRoutes')
 const userRoutes = require('./routes/userRoutes');
 const authRoutes = require('./routes/authRoutes')
 const departmentRoutes = require('./routes/departmentRoutes');
+const jraDescriptionRoutes = require('./routes/jraDescriptionRoutes');
+const retentionPeriodRoutes = require('./routes/retentionPeriodRoutes');
+const storageLocationRoutes = require('./routes/storageLocationRoutes');
 
 const app = express();
 
@@ -37,6 +40,9 @@ app.use('/api/classification', classificationRoutes)
 app.use('/api/nota', authenticateToken, notaRoutes)
 app.use('/api/user', authenticateToken, userRoutes)
 app.use('/api/department', departmentRoutes)
+app.use('/api/jra', jraDescriptionRoutes)
+app.use('/api/retention', retentionPeriodRoutes)
+app.use('/api/storage', storageLocationRoutes)
 app.use(errorHandler);
 
 async function startServer() {

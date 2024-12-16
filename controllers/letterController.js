@@ -9,6 +9,9 @@ const ExcelJS = require('exceljs');
 const Department = require('../models/department');
 const Level = require('../models/level');
 const Classification = require('../models/classification');
+const RetentionPeriod = require('../models/retentionPeriod');
+const JraDescription = require('../models/jraDescription')
+const StorageLocation = require('../models/storageLocation')
 
 exports.createLetter = async (req, res, next) => {
     const {
@@ -20,7 +23,12 @@ exports.createLetter = async (req, res, next) => {
         classificationId,
         levelId,
         attachmentCount,
-        description
+        description,
+        documentIndexName,
+        activeRetentionPeriodId,
+        inactiveRetentionPeriodId,
+        jraDescriptionId,
+        storageLocationId
     } = req.body;
     const file = req.file
 
@@ -92,6 +100,11 @@ exports.createLetter = async (req, res, next) => {
                 description: description,
                 filename: file ? file.originalname : null,
                 filePath: file ? path.join('uploads', file.filename) : null,
+                documentIndexName: documentIndexName,
+                activeRetentionPeriodId: activeRetentionPeriodId,
+                inactiveRetentionPeriodId: inactiveRetentionPeriodId,
+                jraDescriptionId: jraDescriptionId,
+                storageLocationId: storageLocationId,
             })
             return res.status(StatusCodes.CREATED).json(letter)
         }
@@ -176,6 +189,24 @@ exports.getAllLetter = async (req, res, next) => {
                 {
                     model: Classification,
                     attributes: ['name']
+                },
+                {
+                    model: StorageLocation,
+                    attributes: ['name']
+                },
+                {
+                    model: JraDescription,
+                    attributes: ['name']
+                },
+                {
+                    model: RetentionPeriod,
+                    attributes: ['name'],
+                    as: 'ActiveRetentionPeriod'
+                },
+                {
+                    model: RetentionPeriod,
+                    attributes: ['name'],
+                    as: 'ActiveRetentionPeriod'
                 }
             ]
         })
@@ -201,6 +232,24 @@ exports.getLetterById = async (req, res, next) => {
                 {
                     model: Classification,
                     attributes: ['name']
+                },
+                {
+                    model: StorageLocation,
+                    attributes: ['name']
+                },
+                {
+                    model: JraDescription,
+                    attributes: ['name']
+                },
+                {
+                    model: RetentionPeriod,
+                    attributes: ['name'],
+                    as: 'ActiveRetentionPeriod'
+                },
+                {
+                    model: RetentionPeriod,
+                    attributes: ['name'],
+                    as: 'ActiveRetentionPeriod'
                 }
             ]
         })
@@ -250,7 +299,19 @@ exports.updateLetterById = async (req, res, next) => {
     const MAX_UPDATE_DAYS = 20;
 
     const id = req.params.id;
-    const {subject, to, classificationId, levelId, attachmentCount, description} = req.body;
+    const {
+        subject,
+        to,
+        classificationId,
+        levelId,
+        attachmentCount,
+        description,
+        documentIndexName,
+        activeRetentionPeriodId,
+        inactiveRetentionPeriodId,
+        jraDescriptionId,
+        storageLocationId
+    } = req.body;
     const file = req.file;
     const isAdmin = req.payload.isAdmin
 
@@ -282,6 +343,11 @@ exports.updateLetterById = async (req, res, next) => {
             levelId: levelId,
             attachmentCount: attachmentCount,
             description: description,
+            documentIndexName: documentIndexName,
+            activeRetentionPeriodId: activeRetentionPeriodId,
+            inactiveRetentionPeriodId: inactiveRetentionPeriodId,
+            jraDescriptionId: jraDescriptionId,
+            storageLocationId: storageLocationId,
         };
 
         if (file) {
@@ -342,6 +408,11 @@ exports.deleteLetterById = async (req, res, next) => {
                             levelId: null,
                             attachmentCount: null,
                             description: null,
+                            documentIndexName: null,
+                            activeRetentionPeriodId: null,
+                            inactiveRetentionPeriodId: null,
+                            jraDescriptionId: null,
+                            storageLocationId: null,
                         },
                     );
 
