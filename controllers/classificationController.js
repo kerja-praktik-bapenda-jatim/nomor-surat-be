@@ -21,7 +21,10 @@ exports.getAllClassification = async (req, res, next) => {
     if (parentId) {
         if (recursive && stringToBoolean(recursive)) {
             filterConditions.id = {
-                [Op.like]: `${parentId}%`
+                [Op.or]: [
+                    {[Op.like]: `${parentId}.%`},
+                    {[Op.eq]: parentId},
+                ]
             }
         } else {
             filterConditions.id = parentId

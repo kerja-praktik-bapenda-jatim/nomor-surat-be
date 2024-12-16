@@ -382,8 +382,11 @@ exports.exportNota = async (req, res) => {
 
         if (classificationId) {
             if (recursive && stringToBoolean(recursive)) {
-                filterConditions.classificationId = {
-                    [Op.like]: `${classificationId}%`
+                filterConditions.id = {
+                    [Op.or]: [
+                        {[Op.like]: `${classificationId}.%`},
+                        {[Op.eq]: classificationId},
+                    ]
                 }
             } else {
                 filterConditions.classificationId = classificationId
