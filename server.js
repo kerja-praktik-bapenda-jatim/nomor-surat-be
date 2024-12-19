@@ -19,6 +19,7 @@ const departmentRoutes = require('./routes/departmentRoutes');
 const jraDescriptionRoutes = require('./routes/jraDescriptionRoutes');
 const retentionPeriodRoutes = require('./routes/retentionPeriodRoutes');
 const storageLocationRoutes = require('./routes/storageLocationRoutes');
+const accessRoutes = require('./routes/accessRoutes');
 
 const app = express();
 
@@ -43,6 +44,7 @@ app.use('/api/department', departmentRoutes)
 app.use('/api/jra', jraDescriptionRoutes)
 app.use('/api/retention', retentionPeriodRoutes)
 app.use('/api/storage', storageLocationRoutes)
+app.use('/api/access', accessRoutes)
 app.use(errorHandler);
 
 async function startServer() {
