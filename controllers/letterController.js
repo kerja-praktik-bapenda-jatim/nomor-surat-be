@@ -12,6 +12,7 @@ const Classification = require('../models/classification');
 const RetentionPeriod = require('../models/retentionPeriod');
 const JraDescription = require('../models/jraDescription')
 const StorageLocation = require('../models/storageLocation')
+const Access = require('../models/access')
 
 exports.createLetter = async (req, res, next) => {
     const {
@@ -28,7 +29,8 @@ exports.createLetter = async (req, res, next) => {
         activeRetentionPeriodId,
         inactiveRetentionPeriodId,
         jraDescriptionId,
-        storageLocationId
+        storageLocationId,
+        accessId
     } = req.body;
     const file = req.file
 
@@ -105,6 +107,7 @@ exports.createLetter = async (req, res, next) => {
                 inactiveRetentionPeriodId: inactiveRetentionPeriodId,
                 jraDescriptionId: jraDescriptionId,
                 storageLocationId: storageLocationId,
+                accessId: accessId,
             })
             return res.status(StatusCodes.CREATED).json(letter)
         }
@@ -206,7 +209,11 @@ exports.getAllLetter = async (req, res, next) => {
                 {
                     model: RetentionPeriod,
                     attributes: ['name'],
-                    as: 'ActiveRetentionPeriod'
+                    as: 'InactiveRetentionPeriod'
+                },
+                {
+                    model: Access,
+                    attributes: ['name'],
                 }
             ]
         })
@@ -249,7 +256,11 @@ exports.getLetterById = async (req, res, next) => {
                 {
                     model: RetentionPeriod,
                     attributes: ['name'],
-                    as: 'ActiveRetentionPeriod'
+                    as: 'InactiveRetentionPeriod'
+                },
+                {
+                    model: Access,
+                    attributes: ['name'],
                 }
             ]
         })
@@ -310,7 +321,8 @@ exports.updateLetterById = async (req, res, next) => {
         activeRetentionPeriodId,
         inactiveRetentionPeriodId,
         jraDescriptionId,
-        storageLocationId
+        storageLocationId,
+        accessId,
     } = req.body;
     const file = req.file;
     const isAdmin = req.payload.isAdmin
@@ -348,6 +360,7 @@ exports.updateLetterById = async (req, res, next) => {
             inactiveRetentionPeriodId: inactiveRetentionPeriodId,
             jraDescriptionId: jraDescriptionId,
             storageLocationId: storageLocationId,
+            accessId: accessId,
         };
 
         if (file) {
@@ -413,6 +426,7 @@ exports.deleteLetterById = async (req, res, next) => {
                             inactiveRetentionPeriodId: null,
                             jraDescriptionId: null,
                             storageLocationId: null,
+                            accessId: null,
                         },
                     );
 

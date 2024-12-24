@@ -12,6 +12,7 @@ const User = require("../models/user");
 const StorageLocation = require("../models/storageLocation");
 const JraDescription = require("../models/jraDescription");
 const RetentionPeriod = require("../models/retentionPeriod");
+const Access = require("../models/access");
 
 exports.createNota = async (req, res, next) => {
     const {
@@ -28,7 +29,8 @@ exports.createNota = async (req, res, next) => {
         activeRetentionPeriodId,
         inactiveRetentionPeriodId,
         jraDescriptionId,
-        storageLocationId
+        storageLocationId,
+        accessId
     } = req.body;
     const file = req.file;
 
@@ -105,6 +107,7 @@ exports.createNota = async (req, res, next) => {
                 inactiveRetentionPeriodId: inactiveRetentionPeriodId,
                 jraDescriptionId: jraDescriptionId,
                 storageLocationId: storageLocationId,
+                accessId: accessId,
             })
             return res.status(StatusCodes.CREATED).json(nota)
         }
@@ -206,7 +209,11 @@ exports.getAllNota = async (req, res, next) => {
                 {
                     model: RetentionPeriod,
                     attributes: ['name'],
-                    as: 'ActiveRetentionPeriod'
+                    as: 'InactiveRetentionPeriod'
+                },
+                {
+                    model: Access,
+                    attributes: ['name'],
                 }
             ]
         })
@@ -249,7 +256,11 @@ exports.getNotaById = async (req, res, next) => {
                 {
                     model: RetentionPeriod,
                     attributes: ['name'],
-                    as: 'ActiveRetentionPeriod'
+                    as: 'InactiveRetentionPeriod'
+                },
+                {
+                    model: Access,
+                    attributes: ['name'],
                 }
             ]
         })
@@ -309,7 +320,8 @@ exports.updateNotaById = async (req, res, next) => {
         activeRetentionPeriodId,
         inactiveRetentionPeriodId,
         jraDescriptionId,
-        storageLocationId
+        storageLocationId,
+        accessId,
     } = req.body;
     const file = req.file;
     const isAdmin = req.payload.isAdmin
@@ -347,6 +359,7 @@ exports.updateNotaById = async (req, res, next) => {
             inactiveRetentionPeriodId: inactiveRetentionPeriodId,
             jraDescriptionId: jraDescriptionId,
             storageLocationId: storageLocationId,
+            accessId: accessId,
         };
 
         if (file) {
@@ -412,6 +425,7 @@ exports.deleteNotaById = async (req, res, next) => {
                             inactiveRetentionPeriodId: null,
                             jraDescriptionId: null,
                             storageLocationId: null,
+                            accessId: null
                         },
                     );
 

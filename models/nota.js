@@ -5,6 +5,7 @@ const Level = require("./level");
 const JraDescription = require("./jraDescription");
 const StorageLocation = require("./storageLocation");
 const RetentionPeriod = require("./retentionPeriod");
+const Access = require("./access");
 
 const Nota = sequelize.define('Nota', {
         id: {
@@ -93,15 +94,18 @@ Nota.belongsTo(Classification, {foreignKey: 'classificationId'});
 Level.hasMany(Nota, {foreignKey: 'levelId'});
 Nota.belongsTo(Level, {foreignKey: 'levelId'});
 
-RetentionPeriod.hasMany(Nota, {foreignKey: 'activeRetentionId', as: 'ActiveNotas'});
-RetentionPeriod.hasMany(Nota, {foreignKey: 'inactiveRetentionId', as: 'InactiveNotas'});
-Nota.belongsTo(RetentionPeriod, {foreignKey: 'activeRetentionId', as: 'ActiveRetentionPeriod'});
-Nota.belongsTo(RetentionPeriod, {foreignKey: 'inactiveRetentionId', as: 'InactiveRetentionPeriod'});
+RetentionPeriod.hasMany(Nota, {foreignKey: 'activeRetentionPeriodId', as: 'ActiveNotas'});
+RetentionPeriod.hasMany(Nota, {foreignKey: 'inactiveRetentionPeriodId', as: 'InactiveNotas'});
+Nota.belongsTo(RetentionPeriod, {foreignKey: 'activeRetentionPeriodId', as: 'ActiveRetentionPeriod'});
+Nota.belongsTo(RetentionPeriod, {foreignKey: 'inactiveRetentionPeriodId', as: 'InactiveRetentionPeriod'});
 
 JraDescription.hasMany(Nota, {foreignKey: 'jraDescriptionId'})
 Nota.belongsTo(JraDescription, {foreignKey: 'jraDescriptionId'});
 
 StorageLocation.hasMany(Nota, {foreignKey: 'storageLocationId'});
 Nota.belongsTo(StorageLocation, {foreignKey: 'storageLocationId'});
+
+Access.hasMany(Nota, {foreignKey: 'accessId'});
+Nota.belongsTo(Access, {foreignKey: 'accessId'});
 
 module.exports = Nota;
