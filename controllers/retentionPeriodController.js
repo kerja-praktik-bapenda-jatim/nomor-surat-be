@@ -13,10 +13,13 @@ exports.createRetentionPeriod = async (req, res, next) => {
 }
 
 exports.getAllRetentionPeriod = async (req, res, next) => {
+    const { active } = req.query;
     try {
+        const whereCondition = active !== undefined ? { active } : {};
         const {count, rows} = await RetentionPeriod.findAndCountAll({
+            where: whereCondition,
             order: [
-                ['createdAt', 'ASC'],
+                ['id', 'ASC'],
             ]
         })
         if (count === 0) {
