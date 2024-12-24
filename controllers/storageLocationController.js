@@ -16,7 +16,7 @@ exports.getAllStorageLocation = async (req, res, next) => {
     try {
         const {count, rows} = await StorageLocation.findAndCountAll({
             order: [
-                ['createdAt', 'ASC'],
+                ['id', 'ASC'],
             ]
         })
         if (count === 0) {
