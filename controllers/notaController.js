@@ -533,6 +533,28 @@ exports.exportNota = async (req, res) => {
                 {
                     model: Level,
                     attributes: ['name']
+                },
+                {
+                    model: StorageLocation,
+                    attributes: ['name']
+                },
+                {
+                    model: JraDescription,
+                    attributes: ['name']
+                },
+                {
+                    model: RetentionPeriod,
+                    attributes: ['name'],
+                    as: 'ActiveRetentionPeriod'
+                },
+                {
+                    model: RetentionPeriod,
+                    attributes: ['name'],
+                    as: 'InactiveRetentionPeriod'
+                },
+                {
+                    model: Access,
+                    attributes: ['name'],
                 }
             ],
         });
@@ -563,6 +585,11 @@ exports.exportNota = async (req, res) => {
             {header: 'Bidang', key: 'departmentName', width: 20},
             {header: 'Kode Klasifikasi', key: 'classificationId', width: 10},
             {header: 'Nama Klasifikasi', key: 'classificationName', width: 40},
+            {header: 'Hak Akses', key: 'access', width: 36},
+            {header: 'Deskripsi JRA', key: 'jraDescription', width: 36},
+            {header: 'Jangka Waktu Simpan Aktif', key: 'activeRetentionPeriod', width: 36},
+            {header: 'Jangka Waktu Simpan Inaktif', key: 'inactiveRetentionPeriod', width: 36},
+            {header: 'Lokasi Simpan', key: 'storageLocation', width: 36},
         ];
 
         // Tambahkan data ke worksheet
@@ -578,7 +605,12 @@ exports.exportNota = async (req, res) => {
                 subject: data.subject,
                 levelName: data.Level.name,
                 classificationId: data.Classification.id,
-                classificationName: data.Classification.name
+                classificationName: data.Classification.name,
+                access: data.Access.name,
+                jraDescription: data.JraDescription.name,
+                activeRetentionPeriod: data.ActiveRetentionPeriod.name,
+                inactiveRetentionPeriod: data.InactiveRetentionPeriod.name,
+                storageLocation: data.StorageLocation.name
             });
         });
 
