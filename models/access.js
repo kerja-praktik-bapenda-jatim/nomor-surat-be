@@ -3,7 +3,7 @@ const {sequelize} = require('../config/db');
 
 const Access = sequelize.define('Access', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false,
     },

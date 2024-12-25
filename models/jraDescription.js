@@ -3,7 +3,7 @@ const {sequelize} = require('../config/db');
 
 const JraDescription = sequelize.define('JraDescription', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false,
     },

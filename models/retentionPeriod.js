@@ -3,7 +3,7 @@ const {sequelize} = require('../config/db');
 
 const RetentionPeriod = sequelize.define('RetentionPeriod', {
     id: {
-        type: DataTypes.INTEGER,
+        type: DataTypes.STRING,
         primaryKey: true,
         allowNull: false,
     },
