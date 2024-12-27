@@ -121,11 +121,10 @@ exports.getAllNota = async (req, res, next) => {
     const filterConditions = {}
 
     if (!req.payload.isAdmin) {
-        filterConditions.userId = req.payload.userId
+        filterConditions.departmentId = req.payload.departmentId
     }
     if (reserved) {
         if (!req.payload.isAdmin) {
-            delete filterConditions.userId
             filterConditions.departmentId = {
                 [Op.or]: [
                     req.payload.departmentId,
