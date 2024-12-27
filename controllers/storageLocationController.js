@@ -1,4 +1,4 @@
-const StorageLocation = require('../models/StorageLocation');
+const StorageLocation = require('../models/storageLocation');
 const {StatusCodes} = require("http-status-codes");
 
 exports.createStorageLocation = async (req, res, next) => {

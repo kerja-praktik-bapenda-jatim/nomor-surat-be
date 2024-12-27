@@ -1,4 +1,4 @@
-const Access = require('../models/Access');
+const Access = require('../models/access');
 const {StatusCodes} = require("http-status-codes");
 
 exports.createAccess = async (req, res, next) => {
