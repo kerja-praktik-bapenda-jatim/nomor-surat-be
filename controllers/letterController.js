@@ -108,6 +108,7 @@ exports.createLetter = async (req, res, next) => {
                 jraDescriptionId: jraDescriptionId,
                 storageLocationId: storageLocationId,
                 accessId: accessId,
+                updateUserId: req.payload.userId,
             })
             return res.status(StatusCodes.CREATED).json(letter)
         }
@@ -213,6 +214,16 @@ exports.getAllLetter = async (req, res, next) => {
                 {
                     model: Access,
                     attributes: ['name'],
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'CreateUser',
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'UpdateUser',
                 }
             ]
         })
@@ -260,6 +271,16 @@ exports.getLetterById = async (req, res, next) => {
                 {
                     model: Access,
                     attributes: ['name'],
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'CreateUser',
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'UpdateUser',
                 }
             ]
         })
@@ -347,9 +368,9 @@ exports.updateLetterById = async (req, res, next) => {
             subject: subject,
             to: to,
             reserved: true,
-            departmentId: (letter.reserved && isAdmin) ? letter.departmentId : req.payload.departmentId,
+            departmentId: (letter.reserved) ? letter.departmentId : req.payload.departmentId,
             lastReserved: letter.reserved ? new Date(letter.lastReserved) : now,
-            userId: (letter.reserved && isAdmin) ? letter.userId : req.payload.userId,
+            userId: (letter.reserved) ? letter.userId : req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
             attachmentCount: attachmentCount,
@@ -360,6 +381,7 @@ exports.updateLetterById = async (req, res, next) => {
             jraDescriptionId: jraDescriptionId,
             storageLocationId: storageLocationId,
             accessId: accessId,
+            updateUserId: req.payload.userId,
         };
 
         if (file) {
@@ -426,6 +448,7 @@ exports.deleteLetterById = async (req, res, next) => {
                             jraDescriptionId: null,
                             storageLocationId: null,
                             accessId: null,
+                            updateUserId: null,
                         },
                     );
 

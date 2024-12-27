@@ -108,6 +108,7 @@ exports.createNota = async (req, res, next) => {
                 jraDescriptionId: jraDescriptionId,
                 storageLocationId: storageLocationId,
                 accessId: accessId,
+                updateUserId: req.payload.userId,
             })
             return res.status(StatusCodes.CREATED).json(nota)
         }
@@ -213,6 +214,16 @@ exports.getAllNota = async (req, res, next) => {
                 {
                     model: Access,
                     attributes: ['name'],
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'CreateUser',
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'UpdateUser',
                 }
             ]
         })
@@ -260,6 +271,16 @@ exports.getNotaById = async (req, res, next) => {
                 {
                     model: Access,
                     attributes: ['name'],
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'CreateUser',
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'UpdateUser',
                 }
             ]
         })
@@ -346,9 +367,9 @@ exports.updateNotaById = async (req, res, next) => {
             subject: subject,
             to: to,
             reserved: true,
-            departmentId: (nota.reserved && isAdmin) ? nota.departmentId : req.payload.departmentId,
+            departmentId: (nota.reserved) ? nota.departmentId : req.payload.departmentId,
             lastReserved: nota.reserved ? new Date(nota.lastReserved) : now,
-            userId: (nota.reserved && isAdmin) ? nota.userId : req.payload.userId,
+            userId: (nota.reserved) ? nota.userId : req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
             attachmentCount: attachmentCount,
@@ -359,6 +380,7 @@ exports.updateNotaById = async (req, res, next) => {
             jraDescriptionId: jraDescriptionId,
             storageLocationId: storageLocationId,
             accessId: accessId,
+            updateUserId: req.payload.userId,
         };
 
         if (file) {
@@ -424,7 +446,8 @@ exports.deleteNotaById = async (req, res, next) => {
                             inactiveRetentionPeriodId: null,
                             jraDescriptionId: null,
                             storageLocationId: null,
-                            accessId: null
+                            accessId: null,
+                            updateUserId: null,
                         },
                     );
 

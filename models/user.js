@@ -35,10 +35,14 @@ const User = sequelize.define('User', {
 Department.hasMany(User, {foreignKey: 'departmentId',});
 User.belongsTo(Department, {foreignKey: 'departmentId'});
 
-User.hasMany(Letter, {foreignKey: 'userId',});
-Letter.belongsTo(User, {foreignKey: 'userId'});
+User.hasMany(Letter, {foreignKey: 'userId', as: 'CreatedLetter'});
+User.hasMany(Letter, {foreignKey: 'updateUserId', as: 'UpdatedLetter'});
+Letter.belongsTo(User, {foreignKey: 'userId', as: 'CreateUser'});
+Letter.belongsTo(User, {foreignKey: 'updateUserId', as: 'UpdateUser'});
 
-User.hasMany(Nota, {foreignKey: 'userId',});
-Nota.belongsTo(User, {foreignKey: 'userId'});
+User.hasMany(Nota, {foreignKey: 'userId', as: 'CreatedNota'});
+User.hasMany(Nota, {foreignKey: 'userId', as: 'UpdatedNota'});
+Nota.belongsTo(User, {foreignKey: 'userId', as: 'CreateUser'});
+Nota.belongsTo(User, {foreignKey: 'userId', as: 'UpdateUser'});
 
 module.exports = User;
