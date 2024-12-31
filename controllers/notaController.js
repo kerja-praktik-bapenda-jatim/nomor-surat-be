@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Nota = require('../models/nota');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean, formatDate, currentTimestamp} = require('../utils/util');
+const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const ExcelJS = require('exceljs');
 const Department = require('../models/department');
@@ -516,7 +516,7 @@ exports.exportNota = async (req, res) => {
         filterConditions.date = {
             [Op.between]: [start, end],
         }
-        filterConditions.reserved = 1
+        filterConditions.reserved = true
 
         if (isAdmin) {
             if (departmentId) {
@@ -541,12 +541,18 @@ exports.exportNota = async (req, res) => {
                 {
                     model: User,
                     attributes: ['username'],
+                    as: 'CreateUser',
                     include: [
                         {
                             model: Department,
                             attributes: ['id', 'name'],
                         },
                     ],
+                },
+                {
+                    model: User,
+                    attributes: ['username'],
+                    as: 'UpdateUser',
                 },
                 {
                     model: Classification,
@@ -596,18 +602,22 @@ exports.exportNota = async (req, res) => {
 
         // Tambahkan header
         worksheet.columns = [
-            // { header: 'ID', key: 'id', width: 36 },
-            {header: 'Nomor Surat', key: 'number', width: 11},
-            {header: 'Tanggal Surat', key: 'date', width: 20},
-            {header: 'Kepada', key: 'to', width: 45},
-            {header: 'Perihal', key: 'subject', width: 60},
-            {header: 'Pembuat', key: 'userName', width: 36},
+            {header: 'Kode Klasifikasi', key: 'classificationId', width: 15},
+            {header: 'Nama Klasifikasi', key: 'classificationName', width: 35},
+            {header: 'Nomor Surat', key: 'number', width: 13},
+            {header: 'Tanggal Surat', key: 'date', width: 18},
+            {header: 'Kepada', key: 'to', width: 40},
+            {header: 'Perihal', key: 'subject', width: 40},
             {header: 'Sifat', key: 'levelName', width: 15},
-            {header: 'Kode Bidang', key: 'departmentId', width: 10},
-            {header: 'Bidang', key: 'departmentName', width: 20},
-            {header: 'Kode Klasifikasi', key: 'classificationId', width: 10},
-            {header: 'Nama Klasifikasi', key: 'classificationName', width: 40},
+            {header: 'Jumlah Lampiran', key: 'attachmentCount', width: 15},
+            {header: 'Keterangan', key: 'description', width: 15},
+            {header: 'Nama File', key: 'filename', width: 15},
+            {header: 'Kode Bidang', key: 'departmentId', width: 12},
+            {header: 'Bidang', key: 'departmentName', width: 25},
+            {header: 'Pembuat', key: 'createUserName', width: 36},
+            {header: 'Pengubah', key: 'updateUserName', width: 36},
             {header: 'Hak Akses', key: 'access', width: 36},
+            {header: 'Indeks Nama Berkas', key: 'documentIndexName', width: 36},
             {header: 'Deskripsi JRA', key: 'jraDescription', width: 36},
             {header: 'Jangka Waktu Simpan Aktif', key: 'activeRetentionPeriod', width: 36},
             {header: 'Jangka Waktu Simpan Inaktif', key: 'inactiveRetentionPeriod', width: 36},
@@ -621,18 +631,24 @@ exports.exportNota = async (req, res) => {
                 number: data.number,
                 date: formatDate(data.date),
                 userName: data.User.username,
+                createUserName: data.CreateUser.username,
+                updateUserName: data.UpdateUser.username,
                 departmentId: data.departmentId,
-                departmentName: data.User.Department.name,
+                departmentName: data.CreateUser.Department.name,
                 to: data.to,
                 subject: data.subject,
                 levelName: data.Level.name,
+                attachmentCount: data.attachmentCount,
+                description: data.description,
+                filename: data.filename,
                 classificationId: data.Classification.id,
                 classificationName: data.Classification.name,
-                access: data.Access.name,
-                jraDescription: data.JraDescription.name,
-                activeRetentionPeriod: data.ActiveRetentionPeriod.name,
-                inactiveRetentionPeriod: data.InactiveRetentionPeriod.name,
-                storageLocation: data.StorageLocation.name
+                access: data.Access?.name || NULL_PLACEHOLDER,
+                jraDescription: data.JraDescription?.name || NULL_PLACEHOLDER,
+                activeRetentionPeriod: data.ActiveRetentionPeriod?.name || NULL_PLACEHOLDER,
+                inactiveRetentionPeriod: data.InactiveRetentionPeriod?.name || NULL_PLACEHOLDER,
+                storageLocation: data.StorageLocation?.name || NULL_PLACEHOLDER,
+                documentIndexName: data.documentIndexName?.name || NULL_PLACEHOLDER,
             });
         });
 

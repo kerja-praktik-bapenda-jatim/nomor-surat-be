@@ -1,5 +1,7 @@
 const bcrypt = require("bcrypt");
 
+exports.NULL_PLACEHOLDER = '-'
+
 function stringToBoolean(value) {
     if (typeof value === 'string') {
         const lowerValue = value.toLowerCase();
