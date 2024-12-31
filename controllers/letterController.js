@@ -514,6 +514,11 @@ exports.exportLetter = async (req, res) => {
         const end = new Date(endDate);
         end.setHours(23, 59, 59);
 
+        console.log("startDate", startDate);
+        console.log("endDate", endDate);
+        console.log("start", start);
+        console.log("end", end);
+
         filterConditions.date = {
             [Op.between]: [start, end],
         }
