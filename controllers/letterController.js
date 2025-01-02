@@ -2,7 +2,14 @@ const path = require('path');
 const fs = require('fs');
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER, getEndTime, getStartDayInWIBAsUTC} = require('../utils/util');
+const {
+    stringToBoolean,
+    formatDate,
+    currentTimestamp,
+    NULL_PLACEHOLDER,
+    getEndTime,
+    getStartDayInWIBAsUTC
+} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
@@ -95,7 +102,7 @@ exports.createLetter = async (req, res, next) => {
                 attachmentCount: attachmentCount < 0 ? 0 : attachmentCount,
                 description: description,
                 filename: file ? file.originalname : null,
-                filePath: file ? path.join('uploads', file.filename) : null,
+                filePath: file ? file.filename : null,
                 documentIndexName: documentIndexName,
                 activeRetentionPeriodId: activeRetentionPeriodId,
                 inactiveRetentionPeriodId: inactiveRetentionPeriodId,
@@ -300,7 +307,7 @@ exports.downloadLetterFile = async (req, res, next) => {
 
         // Cek apakah filePath ada
         if (letter.filePath) {
-            const filePath = path.join(__dirname, '..', letter.filePath); // Mengambil path file dari database
+            const filePath = path.join(process.env.UPLOAD_DIR, letter.filePath); // Mengambil path file dari database
 
             // Cek apakah file tersebut ada di filesystem
             if (fs.existsSync(filePath)) {
@@ -388,7 +395,7 @@ exports.updateLetterById = async (req, res, next) => {
 
             // Update dengan file baru
             updatedData.filename = file.originalname;
-            updatedData.filePath = path.join('uploads', file.filename);
+            updatedData.filePath = file.filename;
         }
 
         await letter.update(updatedData);
@@ -408,51 +415,56 @@ exports.deleteLetterById = async (req, res, next) => {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'Letter not found'})
         }
 
+        let fileDeleted = false;
+
         // Cek apakah filePath ada
         if (letter.filePath) {
-            const filePath = path.join(__dirname, '..', letter.filePath);
-
+            const filePath = path.join(process.env.UPLOAD_DIR, letter.filePath);
 
             if (fs.existsSync(filePath)) {
-                fs.unlink(filePath, async (err) => {
-                    if (err) {
-                        return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                            message: 'Failed to delete file',
-                            error: err
-                        });
-                    }
-                    await letter.update(
-                        {
-                            subject: null,
-                            to: null,
-                            filename: null,
-                            filePath: null,
-                            reserved: false,
-                            lastReserved: null,
-                            userId: null,
-                            departmentId: null,
-                            classificationId: null,
-                            levelId: null,
-                            attachmentCount: null,
-                            description: null,
-                            documentIndexName: null,
-                            activeRetentionPeriodId: null,
-                            inactiveRetentionPeriodId: null,
-                            jraDescriptionId: null,
-                            storageLocationId: null,
-                            accessId: null,
-                            updateUserId: null,
-                        },
-                    );
-
-                    return res.json({message: 'File and record deleted successfully'});
-                });
+                try {
+                    fs.unlinkSync(filePath);
+                    fileDeleted = true;
+                } catch (err) {
+                    return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
+                        message: 'Failed to delete file',
+                        error: err.message,
+                    });
+                }
             } else {
-                return res.status(StatusCodes.NOT_FOUND).json({message: 'File not found on server'});
+                console.warn(`File not found on server: ${filePath}`);
             }
-        } else {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'No file attached to this letter'});
         }
+
+        await letter.update(
+            {
+                subject: null,
+                to: null,
+                filename: null,
+                filePath: null,
+                reserved: false,
+                lastReserved: null,
+                userId: null,
+                departmentId: null,
+                classificationId: null,
+                levelId: null,
+                attachmentCount: null,
+                description: null,
+                documentIndexName: null,
+                activeRetentionPeriodId: null,
+                inactiveRetentionPeriodId: null,
+                jraDescriptionId: null,
+                storageLocationId: null,
+                accessId: null,
+                updateUserId: null,
+            },
+        );
+
+        return res.json({
+            message: fileDeleted
+                ? 'File and record deleted successfully'
+                : 'Record updated successfully, file not found',
+        });
     } catch (error) {
         next(error)
     }

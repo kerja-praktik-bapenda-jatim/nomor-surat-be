@@ -1,15 +1,15 @@
 const multer = require('multer');
-const path = require('path');
 const fs = require('fs');
+
+const uploadPath = process.env.UPLOAD_DIR
 
 // Tentukan storage di direktori uploads
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
-        const uploadPath = path.join(__dirname, '..', 'uploads');
-        
+
         // Cek apakah folder 'uploads' ada, jika tidak buat foldernya
         if (!fs.existsSync(uploadPath)) {
-            fs.mkdirSync(uploadPath, { recursive: true });
+            fs.mkdirSync(uploadPath, {recursive: true});
         }
 
         cb(null, uploadPath);  // Simpan file ke dalam folder 'uploads'
@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
 // Middleware untuk menangani file dengan batas ukuran 2MB
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 2 * 1024 * 1024 },  // Batas file 1MB
+    limits: {fileSize: 2 * 1024 * 1024},  // Batas file 1MB
     fileFilter: fileFilter  // Filter untuk tipe file PDF
 });
 
