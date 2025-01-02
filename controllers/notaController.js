@@ -47,8 +47,7 @@ exports.createNota = async (req, res, next) => {
             const startToday = new Date();
             startToday.setHours(0, 0, 0, 0);
 
-            const endToday = new Date();
-            endToday.setHours(23, 59, 59, 999999);
+            const endToday = getEndTime(startToday);
 
             const yesterday = new Date(startToday);
             yesterday.setDate(startToday.getDate() - 1);
@@ -508,10 +507,9 @@ exports.exportNota = async (req, res) => {
         }
 
         const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
 
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59);
+        let end = new Date(endDate);
+        end = getEndTime(end);
 
         filterConditions.date = {
             [Op.between]: [start, end],

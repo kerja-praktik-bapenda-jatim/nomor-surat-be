@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER} = require('../utils/util');
+const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER, getEndTime} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
@@ -42,18 +42,23 @@ exports.createLetter = async (req, res, next) => {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk letter.'})
             }
 
+            console.log("date from req.body", req.body.date)
             const date = new Date(req.body.date);
+            console.log("date", date);
 
             const startToday = new Date();
             startToday.setHours(0, 0, 0, 0);
+            console.log("startToday", startToday)
 
-            const endToday = new Date();
-            endToday.setHours(23, 59, 59, 999999);
+            const endToday = getEndTime(startToday);
+            console.log("endToday", endToday)
 
             const yesterday = new Date(startToday);
             yesterday.setDate(startToday.getDate() - 1);
+            console.log("Yesterday", yesterday)
 
             date.setHours(23, 59, 59)
+            console.log("date setHours", date)
             if (date.toDateString() === yesterday.toDateString()) {
                 const letterToday = await Letter.findOne({
                     where: {
@@ -509,15 +514,9 @@ exports.exportLetter = async (req, res) => {
         }
 
         const start = new Date(startDate);
-        start.setHours(0, 0, 0, 0);
 
-        const end = new Date(endDate);
-        end.setHours(23, 59, 59);
-
-        console.log("startDate", startDate);
-        console.log("endDate", endDate);
-        console.log("start", start);
-        console.log("end", end);
+        let end = new Date(endDate);
+        end = getEndTime(end);
 
         filterConditions.date = {
             [Op.between]: [start, end],
