@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Nota = require('../models/nota');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER} = require('../utils/util');
+const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER, getEndTime, getStartDayInWIBAsUTC} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const ExcelJS = require('exceljs');
 const Department = require('../models/department');
@@ -42,17 +42,12 @@ exports.createNota = async (req, res, next) => {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk nota dinas.'})
             }
 
-            const date = new Date(req.body.date);
-
-            const startToday = new Date();
-            startToday.setHours(0, 0, 0, 0);
-
+            let date = new Date(req.body.date);
+            const startToday = getStartDayInWIBAsUTC();
             const endToday = getEndTime(startToday);
-
             const yesterday = new Date(startToday);
             yesterday.setDate(startToday.getDate() - 1);
 
-            date.setHours(23, 59, 59)
             if (date.toDateString() === yesterday.toDateString()) {
                 const notaToday = await Nota.findOne({
                     where: {
@@ -71,7 +66,7 @@ exports.createNota = async (req, res, next) => {
             }
 
             const notas = Array.from({length: spareCounts}, () => ({
-                date: date,
+                date: getEndTime(date),
                 userId: req.payload.userId,
                 departmentId: departmentId,
             }));

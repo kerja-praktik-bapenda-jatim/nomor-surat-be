@@ -2,7 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const Letter = require('../models/letter');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER, getEndTime} = require('../utils/util');
+const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER, getEndTime, getStartDayInWIBAsUTC} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const User = require('../models/user');
 const ExcelJS = require('exceljs');
@@ -42,23 +42,12 @@ exports.createLetter = async (req, res, next) => {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk letter.'})
             }
 
-            console.log("date from req.body", req.body.date)
-            const date = new Date(req.body.date);
-            console.log("date", date);
-
-            const startToday = new Date();
-            startToday.setHours(0, 0, 0, 0);
-            console.log("startToday", startToday)
-
+            let date = new Date(req.body.date);
+            const startToday = getStartDayInWIBAsUTC();
             const endToday = getEndTime(startToday);
-            console.log("endToday", endToday)
-
             const yesterday = new Date(startToday);
             yesterday.setDate(startToday.getDate() - 1);
-            console.log("Yesterday", yesterday)
 
-            date.setHours(23, 59, 59)
-            console.log("date setHours", date)
             if (date.toDateString() === yesterday.toDateString()) {
                 const letterToday = await Letter.findOne({
                     where: {
@@ -75,9 +64,9 @@ exports.createLetter = async (req, res, next) => {
                     return res.status(StatusCodes.BAD_REQUEST).json({message: 'Surat untuk tanggal hari ini sudah ada. Tidak bisa menambah surat untuk tanggal kemarin.'});
                 }
             }
-
+            
             const letters = Array.from({length: spareCounts}, () => ({
-                date: date,
+                date: getEndTime(date),
                 userId: req.payload.userId,
                 departmentId: departmentId,
             }));

@@ -41,4 +41,15 @@ function getEndTime(date){
     return new Date(date.getTime()+(23*60+59)*60*1000);
 }
 
-module.exports = {stringToBoolean, hashPassword, formatDate, currentTimestamp, getEndTime};
+function getStartDayInWIBAsUTC() {
+    const utcDate = new Date();
+    const stringCurrentWIB = new Date(utcDate.getTime() + (7 * 60 * 60 * 1000)).toISOString();
+
+    const datePart = stringCurrentWIB.split('T')[0]
+    const newDate = new Date(`${datePart}T00:00:00Z`)
+    const result = new Date(newDate.getTime() - (7 * 60 * 60 * 1000));
+
+    return result;
+}
+
+module.exports = {stringToBoolean, hashPassword, formatDate, currentTimestamp, getEndTime, getStartDayInWIBAsUTC};
