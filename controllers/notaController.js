@@ -169,7 +169,6 @@ exports.getAllNota = async (req, res, next) => {
             [Op.gte]: new Date(current - recent * 24 * 60 * 60 * 1000),
         };
     }
-    console.log(filterConditions)
 
     try {
         const {count, rows} = await Nota.findAndCountAll({

@@ -3,7 +3,6 @@ const {Op, col, fn} = require("sequelize");
 const {StatusCodes} = require('http-status-codes');
 
 exports.getAllUser = async (req, res, next) => {
-    console.log(req.query)
     const {name, email} = req.query;
     const filterConditions = {}
 
