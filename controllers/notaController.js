@@ -329,6 +329,7 @@ exports.updateNotaById = async (req, res, next) => {
         levelId,
         attachmentCount,
         description,
+        departmentId,
         documentIndexName,
         activeRetentionPeriodId,
         inactiveRetentionPeriodId,
@@ -356,11 +357,20 @@ exports.updateNotaById = async (req, res, next) => {
             }
         }
 
+        let deptId = null
+        if(req.payload.isAdmin) {
+            if(!nota.reserved) {
+                deptId = departmentId
+            }
+        } else {
+            deptId = (nota.reserved) ? nota.departmentId : req.payload.departmentId
+        }
+
         const updatedData = {
             subject: subject,
             to: to,
             reserved: true,
-            departmentId: (nota.reserved) ? nota.departmentId : req.payload.departmentId,
+            departmentId: deptId,
             lastReserved: nota.reserved ? new Date(nota.lastReserved) : now,
             userId: (nota.reserved) ? nota.userId : req.payload.userId,
             classificationId: classificationId,

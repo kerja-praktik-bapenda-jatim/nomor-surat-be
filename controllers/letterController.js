@@ -71,7 +71,7 @@ exports.createLetter = async (req, res, next) => {
                     return res.status(StatusCodes.BAD_REQUEST).json({message: 'Surat untuk tanggal hari ini sudah ada. Tidak bisa menambah surat untuk tanggal kemarin.'});
                 }
             }
-            
+
             const letters = Array.from({length: spareCounts}, () => ({
                 date: getEndTime(date),
                 userId: req.payload.userId,
@@ -337,6 +337,7 @@ exports.updateLetterById = async (req, res, next) => {
         levelId,
         attachmentCount,
         description,
+        departmentId,
         documentIndexName,
         activeRetentionPeriodId,
         inactiveRetentionPeriodId,
@@ -364,11 +365,20 @@ exports.updateLetterById = async (req, res, next) => {
             }
         }
 
+        let deptId = null
+        if(req.payload.isAdmin) {
+            if(!letter.reserved) {
+                deptId = departmentId
+            }
+        } else {
+            deptId = (letter.reserved) ? letter.departmentId : req.payload.departmentId
+        }
+
         const updatedData = {
             subject: subject,
             to: to,
             reserved: true,
-            departmentId: (letter.reserved) ? letter.departmentId : req.payload.departmentId,
+            departmentId: deptId,
             lastReserved: letter.reserved ? new Date(letter.lastReserved) : now,
             userId: (letter.reserved) ? letter.userId : req.payload.userId,
             classificationId: classificationId,
