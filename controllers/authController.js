@@ -54,7 +54,7 @@ exports.login = async (req, res, next) => {
             departmentId: user.departmentId,
             departmentName: user.Department.name
         }, JWT_SECRET, {
-            expiresIn: '7d',
+            expiresIn: '8h',
             algorithm: 'HS384'
         });
         return res.json({message: 'Login successful', token});
