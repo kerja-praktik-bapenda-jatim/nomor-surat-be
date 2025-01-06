@@ -383,7 +383,7 @@ exports.updateLetterById = async (req, res, next) => {
             userId: (letter.reserved) ? letter.userId : req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
-            attachmentCount: attachmentCount,
+            attachmentCount: attachmentCount || 0,
             description: description,
             documentIndexName: documentIndexName,
             activeRetentionPeriodId: activeRetentionPeriodId,

@@ -375,7 +375,7 @@ exports.updateNotaById = async (req, res, next) => {
             userId: (nota.reserved) ? nota.userId : req.payload.userId,
             classificationId: classificationId,
             levelId: levelId,
-            attachmentCount: attachmentCount,
+            attachmentCount: attachmentCount || 0,
             description: description,
             documentIndexName: documentIndexName,
             activeRetentionPeriodId: activeRetentionPeriodId,
