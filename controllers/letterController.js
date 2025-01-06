@@ -369,6 +369,8 @@ exports.updateLetterById = async (req, res, next) => {
         if(req.payload.isAdmin) {
             if(!letter.reserved) {
                 deptId = departmentId
+            } else {
+                deptId = letter.departmentId
             }
         } else {
             deptId = (letter.reserved) ? letter.departmentId : req.payload.departmentId

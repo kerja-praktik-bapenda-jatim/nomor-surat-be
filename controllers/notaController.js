@@ -361,6 +361,8 @@ exports.updateNotaById = async (req, res, next) => {
         if(req.payload.isAdmin) {
             if(!nota.reserved) {
                 deptId = departmentId
+            } else {
+                deptId = nota.departmentId
             }
         } else {
             deptId = (nota.reserved) ? nota.departmentId : req.payload.departmentId
