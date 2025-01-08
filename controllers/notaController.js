@@ -112,7 +112,7 @@ exports.createNota = async (req, res, next) => {
 }
 
 exports.getAllNota = async (req, res, next) => {
-    const {start, end, subject, to, reserved, recent} = req.query
+    const {start, end, subject, to, reserved, recent, order} = req.query
     const filterConditions = {}
 
     if (!req.payload.isAdmin) {
@@ -170,12 +170,17 @@ exports.getAllNota = async (req, res, next) => {
         };
     }
 
+    let _order = "ASC"
+    if(order === "desc") {
+        _order = "DESC"
+    }
+
     try {
         const {count, rows} = await Nota.findAndCountAll({
             attributes: {exclude: ['filePath']},
             where: filterConditions,
             order: [
-                ['number', 'DESC'],
+                ['number', _order],
             ],
             include: [
                 {
