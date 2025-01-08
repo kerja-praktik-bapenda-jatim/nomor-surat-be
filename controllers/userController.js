@@ -1,6 +1,8 @@
 const User = require('../models/user');
 const {Op, col, fn} = require("sequelize");
 const {StatusCodes} = require('http-status-codes');
+const {hashPassword} = require("../utils/util");
+const bcrypt = require("bcrypt");
 
 exports.getAllUser = async (req, res, next) => {
     const {name, email} = req.query;
@@ -27,6 +29,40 @@ exports.getAllUser = async (req, res, next) => {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'User not found'})
         }
         return res.json(rows)
+    } catch (error) {
+        next(error)
+    }
+}
+
+exports.updateUser = async (req, res, next) => {
+    const {oldPassword, newPassword, userId} = req.body;
+
+    let _userId = req.payload.userId;
+    const isAdmin = req.payload.isAdmin;
+
+    if (isAdmin && userId) {
+        _userId = userId
+    }
+
+    try {
+        const user = await User.findByPk(_userId);
+        if (!user) {
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'User not found'})
+        }
+
+        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+        if (!isPasswordValid) {
+            return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah'});
+        }
+
+        const updatedData = {
+            username: user.username,
+            password: await hashPassword(newPassword),
+            isAdmin: user.isAdmin,
+        }
+
+        await user.update(updatedData)
+        return res.json({message: 'Berhasil update user'});
     } catch (error) {
         next(error)
     }

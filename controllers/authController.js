@@ -29,7 +29,7 @@ exports.login = async (req, res, next) => {
 
     try {
         if (!(username && password)) {
-            return res.status(StatusCodes.BAD_REQUEST).json({message: 'Username and password is required'});
+            return res.status(StatusCodes.BAD_REQUEST).json({message: 'Username and password dibutuhkan.'});
         }
         const user = await User.findOne({
             where: {username},
@@ -44,7 +44,7 @@ exports.login = async (req, res, next) => {
 
         const isPasswordValid = await bcrypt.compare(password, user.password);
         if (!isPasswordValid) {
-            return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Invalid password'});
+            return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah.'});
         }
 
         const token = jwt.sign({
@@ -57,7 +57,7 @@ exports.login = async (req, res, next) => {
             expiresIn: '8h',
             algorithm: 'HS384'
         });
-        return res.json({message: 'Login successful', token});
+        return res.json({message: 'Login sukses.', token});
     } catch (error) {
         next(error)
     }
