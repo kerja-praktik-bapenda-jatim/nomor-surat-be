@@ -20,7 +20,7 @@ exports.getAllJraDescription = async (req, res, next) => {
             ]
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'JraDescription not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Deskripsi JRA tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {
@@ -34,7 +34,7 @@ exports.getJraDescriptionById = async (req, res, next) => {
     try {
         const jraDescription = await JraDescription.findByPk(id)
         if (!jraDescription) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'JraDescription not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Deskripsi JRA tidak ditemukan.'})
         }
         return res.json(JraDescription);
     } catch (error) {

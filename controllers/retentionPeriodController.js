@@ -23,7 +23,7 @@ exports.getAllRetentionPeriod = async (req, res, next) => {
             ]
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'RetentionPeriod not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Jangka waktu simpan tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {
@@ -37,7 +37,7 @@ exports.getRetentionPeriodById = async (req, res, next) => {
     try {
         const retentionPeriod = await RetentionPeriod.findByPk(id)
         if (!retentionPeriod) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'RetentionPeriod not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Jangka waktu simpan tidak ditemukan.'})
         }
         return res.json(RetentionPeriod);
     } catch (error) {

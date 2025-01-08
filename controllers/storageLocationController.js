@@ -20,7 +20,7 @@ exports.getAllStorageLocation = async (req, res, next) => {
             ]
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'StorageLocation not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Lokasi simpan tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {
@@ -34,7 +34,7 @@ exports.getStorageLocationById = async (req, res, next) => {
     try {
         const storageLocation = await StorageLocation.findByPk(id)
         if (!storageLocation) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'StorageLocation not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Lokasi simpan tidak ditemukan.'})
         }
         return res.json(storageLocation);
     } catch (error) {

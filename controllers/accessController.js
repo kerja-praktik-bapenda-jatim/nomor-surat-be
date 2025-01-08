@@ -20,7 +20,7 @@ exports.getAllAccess = async (req, res, next) => {
             ]
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Access not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Hak akses tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {
@@ -34,7 +34,7 @@ exports.getAccessById = async (req, res, next) => {
     try {
         const access = await Access.findByPk(id)
         if (!access) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Access not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Hak akses tidak ditemukan.'})
         }
         return res.json(access);
     } catch (error) {

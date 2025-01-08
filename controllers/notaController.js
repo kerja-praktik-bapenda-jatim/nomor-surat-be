@@ -39,7 +39,7 @@ exports.createNota = async (req, res, next) => {
     try {
         if (spareCounts) {
             if (!isAdmin) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk nota dinas.'})
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'Akses ditolak. Hanya dapat dibuat oleh admin.'})
             }
 
             let date = new Date(req.body.date);
@@ -76,12 +76,12 @@ exports.createNota = async (req, res, next) => {
 
             // Return response dengan data yang dibuat
             return res.status(StatusCodes.CREATED).json({
-                message: 'Spare Surat berhasil ditambahkan.',
+                message: 'Spare nota dinas berhasil ditambahkan.',
                 createdNotas
             });
         } else {
             if (!classificationId || !levelId) {
-                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Please enter all mandatory field'});
+                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Mohon isi semua kolom wajib!'});
             }
 
             const nota = await Nota.create({
@@ -308,10 +308,10 @@ exports.downloadNotaFile = async (req, res, next) => {
 
                 return res.sendFile(filePath); // Menggunakan res.download untuk mengirim file
             } else {
-                return res.status(StatusCodes.NOT_FOUND).json({message: 'File not found on server'});
+                return res.status(StatusCodes.NOT_FOUND).json({message: 'File tidak ditemukan.'});
             }
         } else {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'No file attached to this nota'});
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Tidak ada file pada nota dinas ini.'});
         }
     } catch (error) {
         next(error);
@@ -353,7 +353,7 @@ exports.updateNotaById = async (req, res, next) => {
             const diff = Math.floor((now - reservedAt) / (1000 * 60 * 60 * 24));
 
             if (diff > MAX_UPDATE_DAYS) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update nota after ${MAX_UPDATE_DAYS} days of creation`})
+                return res.status(StatusCodes.FORBIDDEN).json({message: `Tidak dapat mengubah nota dinas setelah ${MAX_UPDATE_DAYS} hari.`})
             }
         }
 
@@ -431,12 +431,12 @@ exports.deleteNotaById = async (req, res, next) => {
                     fileDeleted = true;
                 } catch (err) {
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                        message: 'Failed to delete file',
+                        message: 'Gagal menghapus file.',
                         error: err.message,
                     });
                 }
             } else {
-                console.warn(`File not found on server: ${filePath}`);
+                console.warn(`File tidak ditemukan: ${filePath}`);
             }
         }
 
@@ -466,8 +466,8 @@ exports.deleteNotaById = async (req, res, next) => {
 
         return res.json({
             message: fileDeleted
-                ? 'File and record deleted successfully'
-                : 'Record updated successfully, file not found',
+                ? 'File dan nota dinas berhasil dihapus'
+                : 'Data berhasil diubah, file tidak ditemukan.',
         });
     } catch (error) {
         next(error)
@@ -533,7 +533,7 @@ exports.exportNota = async (req, res) => {
             }
         } else {
             if (departmentId) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: 'User role can only export own department nota'})
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'User hanya dapat mengekspor nota dinas bidang sendiri.'})
             }
             filterConditions.departmentId = req.payload.departmentId;
         }

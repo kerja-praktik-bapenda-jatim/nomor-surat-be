@@ -39,7 +39,7 @@ exports.getAllClassification = async (req, res, next) => {
             where: filterConditions
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Classification not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Kode klasifikasi tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {
@@ -53,7 +53,7 @@ exports.getClassificationById = async (req, res, next) => {
     try {
         const classification = await Classification.findByPk(id)
         if (!classification) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Classification not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Kode klasifikasi tidak ditemukan.'})
         }
         return res.json(classification);
     } catch (error) {

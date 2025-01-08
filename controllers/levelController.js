@@ -20,7 +20,7 @@ exports.getAllLevel = async (req, res, next) => {
             ]
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Level not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Sifat surat tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {
@@ -34,7 +34,7 @@ exports.getLevelById = async (req, res, next) => {
     try {
         const level = await Level.findByPk(id)
         if (!level) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Level not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Sifat surat tidak ditemukan.'})
         }
         return res.json(level);
     } catch (error) {

@@ -20,7 +20,7 @@ exports.getAllDepartment = async (req, res, next) => {
             ]
         })
         if (count === 0) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'Department not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Bidang tidak ditemukan.'})
         }
         return res.json(rows)
     } catch (error) {

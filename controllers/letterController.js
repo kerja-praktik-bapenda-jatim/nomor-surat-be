@@ -46,7 +46,7 @@ exports.createLetter = async (req, res, next) => {
     try {
         if (spareCounts) {
             if (!isAdmin) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: 'Access denied. Admin privileges required to create bulk letter.'})
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'Akses ditolak. Hanya dapat dibuat oleh admin.'})
             }
 
             let date = new Date(req.body.date);
@@ -83,12 +83,12 @@ exports.createLetter = async (req, res, next) => {
 
             // Return response dengan data yang dibuat
             return res.status(StatusCodes.CREATED).json({
-                message: 'Spare Surat berhasil ditambahkan.',
+                message: 'Spare surat berhasil ditambahkan.',
                 createdLetters
             });
         } else {
             if (!classificationId || !levelId) {
-                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Please enter all mandatory field'});
+                return res.status(StatusCodes.BAD_REQUEST).json({message: 'Mohon isi semua kolom wajib!'});
             }
 
             const letter = await Letter.create({
@@ -316,10 +316,10 @@ exports.downloadLetterFile = async (req, res, next) => {
 
                 return res.sendFile(filePath); // Menggunakan res.download untuk mengirim file
             } else {
-                return res.status(StatusCodes.NOT_FOUND).json({message: 'File not found on server'});
+                return res.status(StatusCodes.NOT_FOUND).json({message: 'File tidak ditemukan.'});
             }
         } else {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'No file attached to this letter'});
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'Tidak ada file pada surat ini.'});
         }
     } catch (error) {
         next(error);
@@ -361,7 +361,7 @@ exports.updateLetterById = async (req, res, next) => {
             const diff = Math.floor((now - reservedAt) / (1000 * 60 * 60 * 24));
 
             if (diff > MAX_UPDATE_DAYS) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: `Cannot update letter after ${MAX_UPDATE_DAYS} days of creation`})
+                return res.status(StatusCodes.FORBIDDEN).json({message: `Tidak dapat mengubah surat setelah ${MAX_UPDATE_DAYS} hari.`})
             }
         }
 
@@ -439,12 +439,12 @@ exports.deleteLetterById = async (req, res, next) => {
                     fileDeleted = true;
                 } catch (err) {
                     return res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({
-                        message: 'Failed to delete file',
+                        message: 'Gagal menghapus file.',
                         error: err.message,
                     });
                 }
             } else {
-                console.warn(`File not found on server: ${filePath}`);
+                console.warn(`File tidak ditemukan: ${filePath}`);
             }
         }
 
@@ -474,8 +474,8 @@ exports.deleteLetterById = async (req, res, next) => {
 
         return res.json({
             message: fileDeleted
-                ? 'File and record deleted successfully'
-                : 'Record updated successfully, file not found',
+                ? 'File dan surat berhasil dihapus.'
+                : 'Data berhasil diubah, file tidak ditemukan.',
         });
     } catch (error) {
         next(error)
@@ -541,7 +541,7 @@ exports.exportLetter = async (req, res) => {
             }
         } else {
             if (departmentId) {
-                return res.status(StatusCodes.FORBIDDEN).json({message: 'User role can only export own department letter'})
+                return res.status(StatusCodes.FORBIDDEN).json({message: 'User hanya dapat mengekspor surat bidang sendiri.'})
             }
             filterConditions.departmentId = req.payload.departmentId;
         }
