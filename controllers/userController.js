@@ -50,9 +50,11 @@ exports.updateUser = async (req, res, next) => {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'User not found'})
         }
 
-        const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
-        if (!isPasswordValid) {
-            return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah'});
+        if (!isAdmin) {
+            const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+            if (!isPasswordValid) {
+                return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah'});
+            }
         }
 
         const updatedData = {
