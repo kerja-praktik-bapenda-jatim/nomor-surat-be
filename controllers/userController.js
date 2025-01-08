@@ -35,27 +35,31 @@ exports.getAllUser = async (req, res, next) => {
 }
 
 exports.updateUser = async (req, res, next) => {
-    const {oldPassword, newPassword, userId} = req.body;
+    const {oldPassword, newPassword, username} = req.body;
 
-    let _userId = req.payload.userId;
-    const isAdmin = req.payload.isAdmin;
-
-    if (isAdmin && userId) {
-        _userId = userId
-    }
+    let _username = username;
+    // const isAdmin = req.payload.isAdmin;
+    //
+    // if (isAdmin && username) {
+    //     _username = username
+    // }
 
     try {
-        const user = await User.findByPk(_userId);
+        const user = await User.findOne({
+            where: {
+                username: _username
+            },
+        });
         if (!user) {
             return res.status(StatusCodes.NOT_FOUND).json({message: 'User not found'})
         }
 
-        if (!isAdmin) {
-            const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
-            if (!isPasswordValid) {
-                return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah'});
-            }
-        }
+        // if (!isAdmin) {
+        //     const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+        //     if (!isPasswordValid) {
+        //         return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah'});
+        //     }
+        // }
 
         const updatedData = {
             username: user.username,
@@ -64,7 +68,7 @@ exports.updateUser = async (req, res, next) => {
         }
 
         await user.update(updatedData)
-        return res.json({message: 'Berhasil update user'});
+        return res.json({message: 'Berhasil update password!'});
     } catch (error) {
         next(error)
     }
