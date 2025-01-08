@@ -91,10 +91,15 @@ exports.createLetter = async (req, res, next) => {
                 return res.status(StatusCodes.BAD_REQUEST).json({message: 'Mohon isi semua kolom wajib!'});
             }
 
+            let deptId = req.payload.departmentId
+            if (isAdmin && departmentId) {
+                deptId = departmentId
+            }
+
             const letter = await Letter.create({
                 date: date,
                 userId: req.payload.userId,
-                departmentId: isAdmin ? departmentId : req.payload.departmentId,
+                departmentId: deptId,
                 subject: subject,
                 to: to,
                 classificationId: classificationId,
@@ -178,7 +183,7 @@ exports.getAllLetter = async (req, res, next) => {
     }
 
     let _order = "ASC"
-    if(order === "desc") {
+    if (order === "desc") {
         _order = "DESC"
     }
 
@@ -371,8 +376,8 @@ exports.updateLetterById = async (req, res, next) => {
         }
 
         let deptId = null
-        if(req.payload.isAdmin) {
-            if(!letter.reserved) {
+        if (req.payload.isAdmin) {
+            if (!letter.reserved) {
                 deptId = departmentId
             } else {
                 deptId = letter.departmentId

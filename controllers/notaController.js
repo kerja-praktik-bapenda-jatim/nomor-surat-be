@@ -2,7 +2,14 @@ const path = require('path');
 const fs = require('fs');
 const Nota = require('../models/nota');
 const {Op, fn, col} = require("sequelize");
-const {stringToBoolean, formatDate, currentTimestamp, NULL_PLACEHOLDER, getEndTime, getStartDayInWIBAsUTC} = require('../utils/util');
+const {
+    stringToBoolean,
+    formatDate,
+    currentTimestamp,
+    NULL_PLACEHOLDER,
+    getEndTime,
+    getStartDayInWIBAsUTC
+} = require('../utils/util');
 const {StatusCodes} = require('http-status-codes');
 const ExcelJS = require('exceljs');
 const Department = require('../models/department');
@@ -84,10 +91,15 @@ exports.createNota = async (req, res, next) => {
                 return res.status(StatusCodes.BAD_REQUEST).json({message: 'Mohon isi semua kolom wajib!'});
             }
 
+            let deptId = req.payload.departmentId
+            if (isAdmin && departmentId) {
+                deptId = departmentId
+            }
+
             const nota = await Nota.create({
                 date: date,
                 userId: req.payload.userId,
-                departmentId: isAdmin ? departmentId : req.payload.departmentId,
+                departmentId: deptId,
                 subject: subject,
                 to: to,
                 classificationId: classificationId,
@@ -171,7 +183,7 @@ exports.getAllNota = async (req, res, next) => {
     }
 
     let _order = "ASC"
-    if(order === "desc") {
+    if (order === "desc") {
         _order = "DESC"
     }
 
@@ -363,8 +375,8 @@ exports.updateNotaById = async (req, res, next) => {
         }
 
         let deptId = null
-        if(req.payload.isAdmin) {
-            if(!nota.reserved) {
+        if (req.payload.isAdmin) {
+            if (!nota.reserved) {
                 deptId = departmentId
             } else {
                 deptId = nota.departmentId
