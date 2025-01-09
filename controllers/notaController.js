@@ -135,7 +135,8 @@ exports.getAllNota = async (req, res, next) => {
             filterConditions.departmentId = {
                 [Op.or]: [
                     req.payload.departmentId,
-                    null
+                    null,
+                    ""
                 ]
             };
         }
@@ -553,10 +554,6 @@ exports.exportNota = async (req, res) => {
                 return res.status(StatusCodes.FORBIDDEN).json({message: 'User hanya dapat mengekspor nota dinas bidang sendiri.'})
             }
             filterConditions.departmentId = req.payload.departmentId;
-        }
-
-        if (departmentId) {
-            filterConditions.departmentId = departmentId;
         }
 
         // Query ke database berdasarkan filter tanggal dan bidang

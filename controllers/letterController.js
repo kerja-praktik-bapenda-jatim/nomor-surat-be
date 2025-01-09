@@ -135,7 +135,8 @@ exports.getAllLetter = async (req, res, next) => {
             filterConditions.departmentId = {
                 [Op.or]: [
                     req.payload.departmentId,
-                    null
+                    null,
+                    ""
                 ]
             };
         }

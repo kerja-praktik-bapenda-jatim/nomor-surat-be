@@ -62,6 +62,10 @@ const Letter = sequelize.define('Letter', {
                 order: [['number', 'DESC']],
             });
 
+            if (!record.departmentId || record.departmentId.trim() === "") {
+                record.departmentId = null
+            }
+
             // Jika ditemukan letter terakhir, tambahkan number, jika tidak, mulai dari 1
             const newNumber = latestLetter ? latestLetter.number + 1 : 1;
 
@@ -81,6 +85,9 @@ const Letter = sequelize.define('Letter', {
 
             // Iterasi untuk setiap letter dan assign nilai number
             record.forEach(letter => {
+                if (!letter.departmentId || letter.departmentId.trim() === "") {
+                    letter.departmentId = null
+                }
                 letter.number = newNumber++;
             });
         },

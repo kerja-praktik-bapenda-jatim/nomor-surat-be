@@ -62,6 +62,10 @@ const Nota = sequelize.define('Nota', {
                     order: [['number', 'DESC']],
                 });
 
+                if (!record.departmentId || record.departmentId.trim() === "") {
+                    record.departmentId = null
+                }
+
                 // Jika ditemukan Nota terakhir, tambahkan number, jika tidak, mulai dari 1
                 const newNumber = latestNota ? latestNota.number + 1 : 1;
 
@@ -81,6 +85,9 @@ const Nota = sequelize.define('Nota', {
 
                 // Iterasi untuk setiap Nota dan assign nilai number
                 record.forEach(Nota => {
+                    if (!Nota.departmentId || Nota.departmentId.trim() === "") {
+                        Nota.departmentId = null
+                    }
                     Nota.number = newNumber++;
                 });
             },
