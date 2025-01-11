@@ -37,12 +37,12 @@ exports.getAllUser = async (req, res, next) => {
 exports.updateUser = async (req, res, next) => {
     const {oldPassword, newPassword, username} = req.body;
 
-    let _username = username;
-    // const isAdmin = req.payload.isAdmin;
-    //
-    // if (isAdmin && username) {
-    //     _username = username
-    // }
+    let _username = req.payload.userName;
+    const isAdmin = req.payload.isAdmin;
+
+    if (isAdmin && username) {
+        _username = username
+    }
 
     try {
         const user = await User.findOne({
@@ -51,20 +51,18 @@ exports.updateUser = async (req, res, next) => {
             },
         });
         if (!user) {
-            return res.status(StatusCodes.NOT_FOUND).json({message: 'User not found'})
+            return res.status(StatusCodes.NOT_FOUND).json({message: 'User tidak ditemukan'})
         }
 
-        // if (!isAdmin) {
-        //     const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
-        //     if (!isPasswordValid) {
-        //         return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password salah'});
-        //     }
-        // }
+        if (!isAdmin) {
+            const isPasswordValid = await bcrypt.compare(oldPassword, user.password);
+            if (!isPasswordValid) {
+                return res.status(StatusCodes.UNAUTHORIZED).json({message: 'Password lama anda salah'});
+            }
+        }
 
         const updatedData = {
-            username: user.username,
             password: await hashPassword(newPassword),
-            isAdmin: user.isAdmin,
         }
 
         await user.update(updatedData)
