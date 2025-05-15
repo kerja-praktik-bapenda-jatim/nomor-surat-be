@@ -20,6 +20,10 @@ const jraDescriptionRoutes = require('./routes/jraDescriptionRoutes');
 const retentionPeriodRoutes = require('./routes/retentionPeriodRoutes');
 const storageLocationRoutes = require('./routes/storageLocationRoutes');
 const accessRoutes = require('./routes/accessRoutes');
+const letterTypeRoutes = require('./routes/letterTypeRoutes');
+const letterInRoutes = require('./routes/letterInRoutes');
+const agendaRoutes = require('./routes/agendaRoutes');
+const disposisiRoutes = require('./routes/disposisiRoutes');
 
 const app = express();
 
@@ -59,6 +63,9 @@ app.use('/api/jra', jraDescriptionRoutes)
 app.use('/api/retention', retentionPeriodRoutes)
 app.use('/api/storage', storageLocationRoutes)
 app.use('/api/access', accessRoutes)
+app.use('/api/lettertype', letterTypeRoutes)
+app.use('/api/letterin', authenticateToken, letterInRoutes);
+app.use('/api/agenda-letterin', authenticateToken, agendaRoutes);
 app.use(errorHandler);
 
 async function startServer() {
@@ -69,7 +76,7 @@ async function startServer() {
         await sequelize.sync({alter: false});
         console.log('Database synced successfully!');
 
-        const PORT = process.env.PORT || 3000;
+        const PORT = process.env.PORT || 8080;
         app.listen(PORT, () => {
             console.log(`Server running on port ${PORT}`);
         });
