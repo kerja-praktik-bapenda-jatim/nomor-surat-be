@@ -117,6 +117,9 @@ exports.getLetterTypeById = async (req, res, next) => {
 
 exports.updateLetterTypeById = async (req, res, next) => {
     const { id, oldName, newName } = req.body;
+    console.log('ID:', id);
+    console.log('Old Name:', oldName);
+    console.log('New Name:', newName);
 
     try {
         const letterType = await LetterType.findOne({ where: { id } });
