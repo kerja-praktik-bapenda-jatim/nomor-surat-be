@@ -1,4 +1,6 @@
 const LetterIn = require('../models/letterIn');
+const Classification = require('../models/classification');
+const LetterType = require('../models/letterType');
 const AgendaLetterIn = require('../models/agenda');
 const {StatusCodes} = require('http-status-codes');
 
@@ -13,7 +15,20 @@ exports.create = async (req, res) => {
 
 exports.getAll = async (req, res) => {
   try {
-    const data = await LetterIn.findAll();
+    const data = await LetterIn.findAll({
+      include: [
+        {
+          model: Classification,
+          as: 'Classification', // pastikan sama dengan relasi di model
+          attributes: ['id', 'name'],
+        },
+        {
+          model: LetterType,
+          as: 'LetterType', // pastikan sama dengan relasi di model
+          attributes: ['id', 'name'],
+        }
+      ]
+    });
     res.json(data);
   } catch (err) {
     res.status(500).json({ message: err.message });
