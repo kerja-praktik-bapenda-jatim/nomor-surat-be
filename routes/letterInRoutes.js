@@ -1,14 +1,24 @@
 const express = require('express');
 const router = express.Router();
-const controller = require('../controllers/letterInController');
-const upload = require('../middlewares/multer'); 
+const {
+    create,
+    getAll,
+    getById,
+    updateById,
+    deleteById,
+    deleteAll,
+    downloadFile
+} = require('../controllers/letterInController'); // Gunakan nama controller yang sesuai
 
-router.post('/', controller.create);
-router.get('/', controller.getAll);
-router.get('/:id', controller.getById); 
-router.delete('/:id', controller.deleteById);
-router.delete('/', controller.deleteAll);
-router.patch('/:id', upload.single('upload'), controller.updateById);
+const upload = require('../middlewares/multer');  // Pastikan middleware multer sudah disiapkan
+
+// Route definitions
+router.post('/', upload.single('file'), create); // Form field name 'file'
+router.get('/', getAll);
+router.get('/:id', getById);
+router.get('/download/:id', downloadFile);
+router.patch('/:id', upload.single('file'), updateById);
+router.delete('/:id', deleteById);
+router.delete('/', deleteAll);
 
 module.exports = router;
-
