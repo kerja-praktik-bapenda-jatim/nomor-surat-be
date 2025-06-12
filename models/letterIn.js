@@ -11,16 +11,24 @@ const letterIn = sequelize.define('letterIn', {
   },
   noAgenda: DataTypes.INTEGER,
   noSurat: DataTypes.STRING,
-  // klasifikasi: DataTypes.STRING,
   suratDari: DataTypes.STRING,
   perihal: DataTypes.STRING,
   tglSurat: DataTypes.DATE,
   diterimaTgl: DataTypes.DATE,
-  // jenisSurat: DataTypes.STRING,
   langsungKe: DataTypes.BOOLEAN,
   ditujukanKe: DataTypes.STRING,
   agenda: DataTypes.BOOLEAN,
-  upload: DataTypes.BLOB,
+
+  // ✅ Hanya field upload dulu, tanpa metadata
+  upload: {
+    type: DataTypes.BLOB('long'),
+    allowNull: true
+  }
+
+  // ✅ Comment dulu field yang belum ada di DB
+  // filename: DataTypes.STRING,
+  // mimetype: DataTypes.STRING,
+  // filesize: DataTypes.INTEGER,
 }, {
   tableName: 'letter_ins',
   timestamps: false

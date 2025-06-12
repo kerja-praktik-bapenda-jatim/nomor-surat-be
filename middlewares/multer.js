@@ -33,7 +33,7 @@ const fileFilter = (req, file, cb) => {
 // Middleware untuk menangani file dengan batas ukuran 2MB
 const upload = multer({
     storage: storage,
-    limits: {fileSize: 2 * 1024 * 1024},  // Batas file 1MB
+    limits: {fileSize: 10 * 1024 * 1024},  // Batas file 1MB
     fileFilter: fileFilter  // Filter untuk tipe file PDF
 });
 

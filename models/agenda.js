@@ -16,7 +16,16 @@ const Agenda = sequelize.define('Agenda', {
   catatan: DataTypes.STRING,
 });
 
-LetterIn.hasOne(Agenda, { foreignKey: 'letterIn_id' });
-Agenda.belongsTo(LetterIn, { foreignKey: 'letterIn_id' });
+LetterIn.hasOne(Agenda, { 
+  foreignKey: 'letterIn_id',
+  onDelete: 'CASCADE',  // ✅ KEY ADDITION
+  onUpdate: 'CASCADE'   // ✅ OPTIONAL
+});
+
+Agenda.belongsTo(LetterIn, { 
+  foreignKey: 'letterIn_id',
+  onDelete: 'CASCADE',  // ✅ KEY ADDITION  
+  onUpdate: 'CASCADE'   // ✅ OPTIONAL
+});
 
 module.exports = Agenda;

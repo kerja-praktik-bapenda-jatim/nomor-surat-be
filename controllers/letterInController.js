@@ -3,29 +3,40 @@ const fs = require('fs');
 const LetterIn = require('../models/letterIn');
 const Classification = require('../models/classification');
 const LetterType = require('../models/letterType');
-const AgendaLetterIn = require('../models/agenda');
 const { Op } = require('sequelize');
 const { StatusCodes } = require('http-status-codes');
 const { stringToBoolean } = require('../utils/util');
+const Agenda = require('../models/agenda');
+const { sequelize } = require('../config/db'); 
 
 exports.create = async (req, res) => {
   try {
     const {
-      noAgenda,
-      noSurat,
-      suratDari,
-      perihal,
-      tglSurat,
-      diterimaTgl,
-      langsungKe,
-      ditujukanKe,
-      agenda,
-      classificationId,
-      letterTypeId
+      noAgenda, noSurat, suratDari, perihal, tglSurat, diterimaTgl,
+      langsungKe, ditujukanKe, agenda, classificationId, letterTypeId
     } = req.body;
 
     const file = req.file;
+    if (!file) {
+      return res.status(400).json({ message: 'File is required' });
+    }
 
+    // Check file size (max 10MB)
+    const maxSize = 10 * 1024 * 1024; // 10MB
+    if (file.size > maxSize) {
+      if (fs.existsSync(file.path)) {
+        fs.unlinkSync(file.path);
+      }
+      return res.status(400).json({ 
+        message: `File terlalu besar. Maksimal ${maxSize / (1024 * 1024)}MB` 
+      });
+    }
+
+    // Baca file sebagai buffer
+    const fileBuffer = fs.readFileSync(file.path);
+    
+    console.log(`File info: ${file.originalname}, Size: ${file.size} bytes`);
+    
     const newData = await LetterIn.create({
       noAgenda,
       noSurat,
@@ -38,16 +49,191 @@ exports.create = async (req, res) => {
       agenda: stringToBoolean(agenda),
       classificationId,
       letterTypeId,
-      filePath: file ? file.path : null,
-      filename: file ? file.originalname : null
+      
+      // ✅ Hanya simpan BLOB dulu, tanpa metadata
+      upload: fileBuffer
+      
+      // ✅ Comment metadata yang belum ada di DB
+      // filename: file.originalname,
+      // mimetype: file.mimetype,
+      // filesize: file.size
     });
 
-    res.status(StatusCodes.CREATED).json(newData);
+    // Hapus temporary file
+    fs.unlinkSync(file.path);
+
+    const result = await LetterIn.findByPk(newData.id, {
+      include: [
+        { model: Classification, as: 'Classification', attributes: ['id', 'name'] },
+        { model: LetterType, as: 'LetterType', attributes: ['id', 'name'] }
+      ]
+    });
+
+    res.status(StatusCodes.CREATED).json(result);
   } catch (err) {
+    console.error('Create letter error:', err);
+    
+    // Cleanup temporary file
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
     res.status(StatusCodes.BAD_REQUEST).json({ message: err.message });
   }
 };
 
+exports.downloadFile = async (req, res) => {
+  try {
+    const data = await LetterIn.findByPk(req.params.id);
+
+    if (!data || !data.upload) {
+      return res.status(404).json({ message: 'File not found' });
+    }
+
+    // ✅ Set headers tanpa metadata (gunakan default)
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', data.upload.length);
+    res.setHeader('Content-Disposition', `inline; filename="surat-${data.noSurat || data.id}.pdf"`);
+    
+    // Send BLOB data
+    res.send(data.upload);
+  } catch (err) {
+    console.error('Download file error:', err);
+    res.status(500).json({ message: err.message });
+  }
+};
+
+exports.updateById = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
+  try {
+    const {
+      noAgenda, noSurat, suratDari, perihal, tglSurat, diterimaTgl,
+      langsungKe, ditujukanKe, agenda, classificationId, letterTypeId,
+      // ✅ Tambah agenda fields
+      tglMulai, tglSelesai, jamMulai, jamSelesai, tempat, acara, catatan
+    } = req.body;
+
+    const file = req.file;
+    const data = await LetterIn.findByPk(req.params.id, { transaction });
+    
+    if (!data) {
+      await transaction.rollback();
+      return res.status(StatusCodes.NOT_FOUND).json({ message: 'LetterIn not found' });
+    }
+
+    const updatedData = {
+      noAgenda: noAgenda || data.noAgenda,
+      noSurat: noSurat || data.noSurat,
+      suratDari: suratDari || data.suratDari,
+      perihal: perihal || data.perihal,
+      tglSurat: tglSurat || data.tglSurat,
+      diterimaTgl: diterimaTgl || data.diterimaTgl,
+      langsungKe: langsungKe !== undefined ? stringToBoolean(langsungKe) : data.langsungKe,
+      ditujukanKe: ditujukanKe || data.ditujukanKe,
+      agenda: agenda !== undefined ? stringToBoolean(agenda) : data.agenda,
+      classificationId: classificationId || data.classificationId,
+      letterTypeId: letterTypeId || data.letterTypeId
+    };
+
+    // Handle file update
+    if (file) {
+      const maxSize = 10 * 1024 * 1024; // 10MB
+      if (file.size > maxSize) {
+        if (fs.existsSync(file.path)) {
+          fs.unlinkSync(file.path);
+        }
+        await transaction.rollback();
+        return res.status(400).json({ 
+          message: `File terlalu besar. Maksimal ${maxSize / (1024 * 1024)}MB` 
+        });
+      }
+
+      const fileBuffer = fs.readFileSync(file.path);
+      updatedData.upload = fileBuffer;
+      fs.unlinkSync(file.path);
+    }
+
+    // ✅ Update letter data
+    await data.update(updatedData, { transaction });
+
+    // ✅ HANDLE AGENDA LOGIC
+    const agendaFlag = stringToBoolean(agenda);
+    
+    if (agendaFlag === true) {
+      // ✅ Validasi agenda fields
+      if (!tglMulai || !tglSelesai || !jamMulai || !jamSelesai || !tempat || !acara) {
+        await transaction.rollback();
+        return res.status(400).json({ 
+          message: 'Data agenda tidak lengkap. Field tglMulai, tglSelesai, jamMulai, jamSelesai, tempat, dan acara wajib diisi.' 
+        });
+      }
+
+      // ✅ Cari agenda yang sudah ada
+      const existingAgenda = await Agenda.findOne({
+        where: { letterIn_id: req.params.id },
+        transaction
+      });
+
+      const agendaData = {
+        tglMulai: new Date(tglMulai),
+        tglSelesai: new Date(tglSelesai),
+        jamMulai,
+        jamSelesai,
+        tempat,
+        acara,
+        catatan: catatan || '',
+        letterIn_id: req.params.id
+      };
+
+      if (existingAgenda) {
+        // Update existing agenda
+        await existingAgenda.update(agendaData, { transaction });
+        console.log('✅ Agenda updated:', agendaData);
+      } else {
+        // Create new agenda
+        await Agenda.create(agendaData, { transaction });
+        console.log('✅ Agenda created:', agendaData);
+      }
+    } else {
+      // ✅ Jika agenda = false, hapus agenda yang ada
+      const deletedCount = await Agenda.destroy({
+        where: { letterIn_id: req.params.id },
+        transaction
+      });
+      console.log(`✅ Agenda deleted: ${deletedCount} records`);
+    }
+
+    // ✅ Commit transaction
+    await transaction.commit();
+    
+    // ✅ Fetch updated result dengan agenda
+    const result = await LetterIn.findByPk(data.id, {
+      include: [
+        { model: Classification, as: 'Classification', attributes: ['id', 'name'] },
+        { model: LetterType, as: 'LetterType', attributes: ['id', 'name'] },
+        { model: Agenda, as: 'Agenda' } // ✅ Include agenda
+      ]
+    });
+    
+    res.status(StatusCodes.OK).json(result);
+  } catch (err) {
+    await transaction.rollback();
+    console.error('Update letter error:', err);
+    
+    // Cleanup temporary file
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    
+    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ 
+      message: 'Gagal mengupdate surat', 
+      error: err.message 
+    });
+  }
+};
+
+// Fungsi lainnya tetap sama
 exports.getAll = async (req, res) => {
   try {
     const { startDate, endDate, perihal, suratDari } = req.query;
@@ -81,16 +267,9 @@ exports.getAll = async (req, res) => {
     const data = await LetterIn.findAll({
       where: filterConditions,
       include: [
-        {
-          model: Classification,
-          as: 'Classification',
-          attributes: ['id', 'name']
-        },
-        {
-          model: LetterType,
-          as: 'LetterType',
-          attributes: ['id', 'name']
-        }
+        { model: Classification, as: 'Classification', attributes: ['id', 'name'] },
+        { model: LetterType, as: 'LetterType', attributes: ['id', 'name'] },
+        { model: Agenda, as: 'Agenda' } // ✅ Include agenda
       ],
       order: [['tglSurat', 'DESC']]
     });
@@ -105,16 +284,9 @@ exports.getById = async (req, res) => {
   try {
     const data = await LetterIn.findByPk(req.params.id, {
       include: [
-        {
-          model: Classification,
-          as: 'Classification',
-          attributes: ['id', 'name']
-        },
-        {
-          model: LetterType,
-          as: 'LetterType',
-          attributes: ['id', 'name']
-        }
+        { model: Classification, as: 'Classification', attributes: ['id', 'name'] },
+        { model: LetterType, as: 'LetterType', attributes: ['id', 'name'] },
+        { model: Agenda, as: 'Agenda' } // ✅ Include agenda
       ]
     });
 
@@ -128,97 +300,39 @@ exports.getById = async (req, res) => {
   }
 };
 
-exports.downloadFile = async (req, res) => {
-  try {
-    const data = await LetterIn.findByPk(req.params.id);
-
-    if (!data) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: 'LetterIn not found' });
-    }
-
-    if (!data.filePath) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: 'File not found' });
-    }
-
-    if (!fs.existsSync(data.filePath)) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: 'File not found on server' });
-    }
-
-    res.setHeader('Content-Disposition', `attachment; filename="${data.filename}"`);
-    res.sendFile(path.resolve(data.filePath));
-  } catch (err) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: err.message });
-  }
-};
-
-exports.updateById = async (req, res) => {
-  try {
-    const {
-      noAgenda,
-      noSurat,
-      suratDari,
-      perihal,
-      tglSurat,
-      diterimaTgl,
-      langsungKe,
-      ditujukanKe,
-      agenda,
-      classificationId,
-      letterTypeId
-    } = req.body;
-
-    const file = req.file;
-
-    const data = await LetterIn.findByPk(req.params.id);
-    if (!data) {
-      return res.status(StatusCodes.NOT_FOUND).json({ message: 'LetterIn not found' });
-    }
-
-    const updatedData = {
-      noAgenda: noAgenda || data.noAgenda,
-      noSurat: noSurat || data.noSurat,
-      suratDari: suratDari || data.suratDari,
-      perihal: perihal || data.perihal,
-      tglSurat: tglSurat || data.tglSurat,
-      diterimaTgl: diterimaTgl || data.diterimaTgl,
-      langsungKe: langsungKe !== undefined ? stringToBoolean(langsungKe) : data.langsungKe,
-      ditujukanKe: ditujukanKe || data.ditujukanKe,
-      agenda: agenda !== undefined ? stringToBoolean(agenda) : data.agenda,
-      classificationId: classificationId || data.classificationId,
-      letterTypeId: letterTypeId || data.letterTypeId
-    };
-
-    if (file) {
-      // Delete old file if exists
-      if (data.filePath && fs.existsSync(data.filePath)) {
-        fs.unlinkSync(data.filePath);
-      }
-      updatedData.filePath = file.path;
-      updatedData.filename = file.originalname;
-    }
-
-    await data.update(updatedData);
-    res.status(StatusCodes.OK).json(data);
-  } catch (err) {
-    res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: err.message });
-  }
-};
-
 exports.deleteById = async (req, res) => {
+  const transaction = await sequelize.transaction();
+  
   try {
-    const data = await LetterIn.findByPk(req.params.id);
+    const data = await LetterIn.findByPk(req.params.id, { transaction });
+    
     if (!data) {
+      await transaction.rollback();
       return res.status(StatusCodes.NOT_FOUND).json({ message: 'LetterIn not found' });
     }
 
-    // Delete associated file if exists
-    if (data.filePath && fs.existsSync(data.filePath)) {
-      fs.unlinkSync(data.filePath);
-    }
+    // ✅ MANUAL DELETE AGENDA DULU (sebagai backup jika cascade tidak jalan)
+    const deletedAgendaCount = await Agenda.destroy({
+      where: { letterIn_id: req.params.id },
+      transaction
+    });
+    
+    console.log(`🗑️ Deleted ${deletedAgendaCount} agenda records for letter ${req.params.id}`);
 
-    await data.destroy();
-    res.status(StatusCodes.OK).json({ message: 'LetterIn deleted successfully' });
+    // ✅ DELETE LETTER
+    await data.destroy({ transaction });
+    
+    await transaction.commit();
+    console.log(`✅ Letter ${req.params.id} deleted successfully`);
+    
+    res.status(StatusCodes.OK).json({ 
+      message: 'LetterIn deleted successfully',
+      deletedAgendaCount 
+    });
+    
   } catch (err) {
+    await transaction.rollback();
+    console.error('❌ Delete error:', err);
     res.status(StatusCodes.INTERNAL_SERVER_ERROR).json({ message: err.message });
   }
 };
@@ -228,14 +342,6 @@ exports.deleteAll = async (req, res) => {
 
   try {
     if (truncate && stringToBoolean(truncate)) {
-      // Delete all files first
-      const allLetters = await LetterIn.findAll();
-      for (const letter of allLetters) {
-        if (letter.filePath && fs.existsSync(letter.filePath)) {
-          fs.unlinkSync(letter.filePath);
-        }
-      }
-
       await LetterIn.destroy({ truncate: true });
       return res.status(StatusCodes.NO_CONTENT).send();
     }
