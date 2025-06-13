@@ -7,16 +7,20 @@ const {
     updateById,
     deleteById,
     deleteAll,
-    downloadFile
-} = require('../controllers/letterInController'); // Gunakan nama controller yang sesuai
+    downloadFile,
+    exportLetters // ✅ Tambahkan ini
+} = require('../controllers/letterInController');
 
-const upload = require('../middlewares/multer');  // Pastikan middleware multer sudah disiapkan
+const upload = require('../middlewares/multer');
 
-// Route definitions
-router.post('/', upload.single('file'), create); // Form field name 'file'
+// ✅ PENTING: Route /export harus di atas /:id untuk menghindari conflict
+router.get('/export', exportLetters); // ✅ Tambah route export
+router.get('/download/:id', downloadFile);
+
+// Route definitions lainnya
+router.post('/', upload.single('file'), create);
 router.get('/', getAll);
 router.get('/:id', getById);
-router.get('/download/:id', downloadFile);
 router.patch('/:id', upload.single('file'), updateById);
 router.delete('/:id', deleteById);
 router.delete('/', deleteAll);
