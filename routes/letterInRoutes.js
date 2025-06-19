@@ -8,19 +8,21 @@ const {
     deleteById,
     deleteAll,
     downloadFile,
-    exportLetters // ✅ Tambahkan ini
+    exportLetters,
+    getNextAgendaNumber // ✅ TAMBAH IMPORT INI
 } = require('../controllers/letterInController');
 
 const upload = require('../middlewares/multer');
 
-// ✅ PENTING: Route /export harus di atas /:id untuk menghindari conflict
-router.get('/export', exportLetters); // ✅ Tambah route export
+// ✅ PENTING: Route khusus harus di atas /:id untuk menghindari conflict
+router.get('/next-agenda', getNextAgendaNumber); // ✅ TAMBAH ROUTE INI
+router.get('/export', exportLetters);
 router.get('/download/:id', downloadFile);
 
 // Route definitions lainnya
 router.post('/', upload.single('file'), create);
 router.get('/', getAll);
-router.get('/:id', getById);
+router.get('/:id', getById); // Route dengan parameter harus paling bawah
 router.patch('/:id', upload.single('file'), updateById);
 router.delete('/:id', deleteById);
 router.delete('/', deleteAll);

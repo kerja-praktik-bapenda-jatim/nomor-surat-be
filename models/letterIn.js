@@ -9,29 +9,83 @@ const letterIn = sequelize.define('letterIn', {
     defaultValue: DataTypes.UUIDV4, 
     primaryKey: true
   },
-  noAgenda: DataTypes.INTEGER,
-  noSurat: DataTypes.STRING,
-  suratDari: DataTypes.STRING,
+  tahun: {
+    type: DataTypes.INTEGER,
+    allowNull: false,
+    defaultValue: () => new Date().getFullYear(),
+    field: 'tahun' // Kolom tahun di database
+  },
+  noAgenda: {
+    type: DataTypes.INTEGER,
+    field: 'no_agenda' // Map ke kolom no_agenda di database
+  },
+  noSurat: {
+    type: DataTypes.STRING,
+    field: 'no_surat' // Kemungkinan juga snake_case
+  },
+  suratDari: {
+    type: DataTypes.STRING,
+    field: 'surat_dari'
+  },
   perihal: DataTypes.STRING,
-  tglSurat: DataTypes.DATE,
-  diterimaTgl: DataTypes.DATE,
-  langsungKe: DataTypes.BOOLEAN,
-  ditujukanKe: DataTypes.STRING,
+  tglSurat: {
+    type: DataTypes.DATE,
+    field: 'tgl_surat'
+  },
+  diterimaTgl: {
+    type: DataTypes.DATE,
+    field: 'diterima_tgl'
+  },
+  langsungKe: {
+    type: DataTypes.BOOLEAN,
+    field: 'langsung_ke'
+  },
+  ditujukanKe: {
+    type: DataTypes.STRING,
+    field: 'ditujukan_ke'
+  },
   agenda: DataTypes.BOOLEAN,
 
-  // ✅ Hanya field upload dulu, tanpa metadata
-  upload: {
-    type: DataTypes.BLOB('long'),
-    allowNull: true
+  // ✅ FINAL: Gunakan filename dan filePath (kolom sudah ada di database)
+  filename: {
+    type: DataTypes.STRING,
+  },
+  filePath: {
+    type: DataTypes.STRING,
+    field: 'filepath'  // Map ke kolom file_path di database
   }
 
-  // ✅ Comment dulu field yang belum ada di DB
-  // filename: DataTypes.STRING,
-  // mimetype: DataTypes.STRING,
-  // filesize: DataTypes.INTEGER,
+  // ✅ HAPUS upload BLOB karena tidak digunakan lagi
+  // upload: {
+  //   type: DataTypes.BLOB('long'),
+  //   allowNull: true
+  // }
+
 }, {
   tableName: 'letter_ins',
-  timestamps: false
+  timestamps: false,
+  indexes: [
+    {
+      unique: true,
+      fields: ['no_agenda', 'tahun']
+    }
+  ]
+});
+
+// Hook untuk auto-generate no_agenda
+letterIn.addHook('beforeCreate', async (letter) => {
+  if (!letter.noAgenda) {
+    const currentYear = new Date().getFullYear();
+    letter.tahun = currentYear;
+    
+    // Cari nomor agenda terakhir untuk tahun ini
+    const lastLetter = await letterIn.findOne({
+      where: { tahun: currentYear },
+      order: [['noAgenda', 'DESC']] // Sequelize akan otomatis map ke no_agenda
+    });
+    
+    letter.noAgenda = lastLetter ? lastLetter.noAgenda + 1 : 1;
+  }
 });
 
 Classification.hasMany(letterIn, {foreignKey: 'classificationId'});
