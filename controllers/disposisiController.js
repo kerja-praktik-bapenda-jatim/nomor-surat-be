@@ -130,28 +130,118 @@ exports.deleteById = async (req, res) => {
 
 // ✅ PERBAIKAN: Function getNextNumber di disposisiController.js
 
+// ✅ PERBAIKAN: Function getNextNumber di disposisiController.js
 exports.getNextNumber = async (req, res) => {
   try {
     console.log('🔢 Getting next disposisi number...');
     
-    // Cari nomor disposisi terbesar saat ini
-    const lastDisposisi = await disposisi.findOne({
-      order: [['noDispo', 'DESC']],
-      attributes: ['noDispo']
-    });
-
-    // ✅ Increment dari nomor terakhir, atau mulai dari 1 jika belum ada
-    const nextNumber = lastDisposisi ? lastDisposisi.noDispo + 1 : 1;
+    // ✅ UBAH: Hitung total count disposisi, bukan nomor terbesar
+    const totalCount = await disposisi.count();
     
-    console.log('📊 Last disposisi number:', lastDisposisi?.noDispo || 'none');
+    // ✅ Next number = total count + 1 (auto increment)
+    const nextNumber = totalCount + 1;
+    
+    console.log('📊 Total disposisi count:', totalCount);
     console.log('🎯 Next number will be:', nextNumber);
     
-    res.json({ noDispo: nextNumber });
+    res.json({ 
+      success: true,
+      noDispo: nextNumber,
+      totalCount: totalCount,
+      message: `Nomor disposisi selanjutnya: ${nextNumber}`
+    });
+    
   } catch (error) {
     console.error('❌ Error getting next disposisi number:', error);
+    
+    // ✅ Fallback: return a safe number based on timestamp
+    const fallbackNumber = Date.now() % 100000;
+    
+    console.log('🔄 Using fallback number:', fallbackNumber);
+    
     res.status(500).json({ 
-      message: 'Failed to get next disposisi number',
-      error: error.message 
+      success: false,
+      message: 'Gagal mengambil nomor disposisi otomatis',
+      error: error.message,
+      fallback: {
+        noDispo: fallbackNumber,
+        note: 'Nomor fallback berdasarkan timestamp - harap verifikasi manual'
+      }
+    });
+  }
+};
+
+// ✅ CHECK LETTER DISPOSITION STATUS
+exports.checkLetterDisposition = async (req, res) => {
+  try {
+    const { letterIn_id } = req.params;
+    
+    console.log('🔍 Checking letter disposition for:', letterIn_id);
+    
+    if (!letterIn_id || letterIn_id.trim() === '') {
+      return res.status(400).json({ 
+        success: false,
+        message: 'Letter ID is required' 
+      });
+    }
+    
+    // ✅ Check if letter exists (optional, might not work if letterIn model not configured)
+    let letterInfo = null;
+    try {
+      letterInfo = await letterIn.findByPk(letterIn_id, {
+        attributes: ['id', 'noSurat', 'suratDari', 'perihal', 'noAgenda', 'tahun']
+      });
+      
+      if (!letterInfo) {
+        return res.status(404).json({
+          success: false,
+          message: `Surat dengan ID ${letterIn_id} tidak ditemukan`
+        });
+      }
+    } catch (letterError) {
+      console.log('⚠️ Could not verify letter existence:', letterError.message);
+      // Continue anyway
+    }
+    
+    // ✅ Get all dispositions for this letter
+    const existingDispositions = await disposisi.findAll({
+      where: { letterIn_id: letterIn_id },
+      order: [['createdAt', 'DESC']],
+      include: [
+        {
+          model: letterIn,
+          as: 'LetterIn',
+          required: false,
+          attributes: ['id', 'noSurat', 'suratDari', 'perihal']
+        }
+      ]
+    });
+    
+    const isDisposed = existingDispositions.length > 0;
+    const formattedDispositions = existingDispositions.map(formatDisposisiResponse);
+    
+    console.log(`📊 Letter ${letterIn_id} disposition status:`, {
+      isDisposed,
+      count: existingDispositions.length
+    });
+    
+    res.json({
+      success: true,
+      isDisposed,
+      letterIn_id,
+      letter: letterInfo,
+      dispositions: formattedDispositions,
+      count: existingDispositions.length,
+      message: isDisposed ? 
+        `Surat sudah didisposisi ${existingDispositions.length} kali` : 
+        'Surat belum pernah didisposisi'
+    });
+    
+  } catch (error) {
+    console.error('❌ Check letter disposition error:', error);
+    res.status(500).json({ 
+      success: false,
+      message: 'Gagal memeriksa status disposisi: ' + error.message
     });
   }
 };

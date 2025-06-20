@@ -2,12 +2,21 @@ const express = require('express');
 const controller = require('../controllers/letterTypeController');
 const router = express.Router();
 
-const {authenticateToken} = require('../middlewares/authMiddleware');
+const { authenticateToken } = require('../middlewares/authMiddleware');
 
-router.post('/', controller.createLetterType);
-// router.post('/', controller.createManyLetterTypes);
+// ✅ CREATE - Tambah jenis surat baru
+router.post('/', authenticateToken, controller.createLetterType);
+
+// ✅ READ - Get semua jenis surat
 router.get('/', controller.getAllLetterTypes);
+
+// ✅ READ - Get jenis surat by ID
 router.get('/:id', controller.getLetterTypeById);
-// router.delete('/:id', authenticateToken, controller.deleteLetterTypeById);
-router.patch('/:id', controller.updateLetterTypeById);
+
+// ✅ UPDATE - Update jenis surat
+router.patch('/:id', authenticateToken, controller.updateLetterTypeById);
+
+// ✅ DELETE - Hapus jenis surat (TAMBAHAN BARU)
+router.delete('/:id', authenticateToken, controller.deleteLetterTypeById);
+
 module.exports = router;
