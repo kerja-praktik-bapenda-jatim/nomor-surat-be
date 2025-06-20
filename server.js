@@ -66,6 +66,7 @@ app.use('/api/access', accessRoutes)
 app.use('/api/lettertype', letterTypeRoutes)
 app.use('/api/letterin', authenticateToken, letterInRoutes);
 app.use('/api/agenda-letterin', authenticateToken, agendaRoutes);
+app.use('/api/disposisi-letterin', authenticateToken, disposisiRoutes);
 app.use(errorHandler);
 
 async function startServer() {

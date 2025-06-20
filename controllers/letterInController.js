@@ -688,3 +688,68 @@ exports.exportLetters = async (req, res) => {
     }
   }
 };
+
+
+exports.searchByAgenda = async (req, res) => {
+  try {
+    const { agendaNumber } = req.params;
+    console.log('🔍 Searching for agenda:', agendaNumber);
+
+    // Parse format "2025/1" atau "1"
+    let tahun, noAgenda;
+    
+    if (agendaNumber.includes('/')) {
+      [tahun, noAgenda] = agendaNumber.split('/');
+    } else {
+      tahun = new Date().getFullYear(); // Default tahun sekarang
+      noAgenda = agendaNumber;
+    }
+
+    console.log('📅 Parsed search:', { tahun: parseInt(tahun), noAgenda: parseInt(noAgenda) });
+
+    // ✅ PERBAIKAN: Gunakan nama kolom database yang sebenarnya
+    const letter = await LetterIn.findOne({
+      where: {
+        tahun: parseInt(tahun),
+        noAgenda: parseInt(noAgenda)  // Sequelize akan auto-convert ke no_agenda di database
+      },
+      include: [
+        {
+          model: Classification,
+          as: 'Classification', // Pastikan alias sesuai dengan definisi model
+          attributes: ['id', 'name']
+        },
+        {
+          model: LetterType,
+          as: 'LetterType', // Pastikan alias sesuai dengan definisi model
+          attributes: ['id', 'name']
+        },
+        {
+          model: Agenda,
+          as: 'Agenda' // Include agenda jika ada
+        }
+      ]
+    });
+
+    if (!letter) {
+      console.log('❌ Letter not found:', { tahun, noAgenda });
+      return res.status(404).json({ 
+        message: `Surat dengan nomor agenda ${tahun}/${noAgenda} tidak ditemukan` 
+      });
+    }
+
+    console.log('✅ Letter found:', letter.id);
+    console.log('📋 Letter data:', {
+      id: letter.id,
+      noAgenda: letter.noAgenda,
+      tahun: letter.tahun,
+      noSurat: letter.noSurat,
+      perihal: letter.perihal
+    });
+    
+    res.json(letter);
+  } catch (error) {
+    console.error('❌ Search error:', error);
+    res.status(500).json({ message: error.message });
+  }
+};
