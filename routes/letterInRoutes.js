@@ -10,21 +10,18 @@ const {
     downloadFile,
     exportLetters,
     getNextAgendaNumber,
-    searchByAgenda // ✅ TAMBAH IMPORT INI
+    searchByAgenda
 } = require('../controllers/letterInController');
 
 const upload = require('../middlewares/multer');
 
-// ✅ PENTING: Route khusus harus di atas /:id untuk menghindari conflict
 router.get('/next-agenda', getNextAgendaNumber);
 router.get('/export', exportLetters);
 router.get('/download/:id', downloadFile);
-router.get('/search/:agendaNumber', searchByAgenda); // ✅ TAMBAH ROUTE INI
-
-// Route definitions lainnya
+router.get('/search/:agendaNumber', searchByAgenda);
 router.post('/', upload.single('file'), create);
 router.get('/', getAll);
-router.get('/:id', getById); // Route dengan parameter harus paling bawah
+router.get('/:id', getById);
 router.patch('/:id', upload.single('file'), updateById);
 router.delete('/:id', deleteById);
 router.delete('/', deleteAll);

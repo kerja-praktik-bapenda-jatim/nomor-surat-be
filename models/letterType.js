@@ -5,13 +5,16 @@ const LetterType = sequelize.define('LetterType', {
     id: {
         type: DataTypes.INTEGER,
         autoIncrement: true,
-        primaryKey: true,
+        primaryKey: true
     },
     name: {
         type: DataTypes.STRING,
         unique: true,
-        allowNull: false,
+        allowNull: false
     }
+}, {
+    tableName: 'letter_types',
+    timestamps: false
 });
 
 module.exports = LetterType;
