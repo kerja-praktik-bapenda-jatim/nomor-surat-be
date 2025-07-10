@@ -229,6 +229,16 @@ exports.updateById = async (req, res) => {
         const { id } = req.params;
         const updateData = { ...req.body };
 
+        // PENGECEKAN ADMIN - HANYA ADMIN YANG BISA EDIT DISPOSISI
+        const isAdmin = req.payload?.isAdmin || req.user?.isAdmin;
+        
+        if (!isAdmin) {
+            return res.status(403).json({
+                success: false,
+                message: 'Akses ditolak. Hanya admin yang dapat mengedit disposisi.'
+            });
+        }
+
         if (req.user?.id) {
             updateData.updateUserId = req.user.id;
         }
